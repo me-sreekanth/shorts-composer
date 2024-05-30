@@ -22,11 +22,10 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
-      GlobalKey<ScaffoldMessengerState>();
-
   int _selectedIndex = 0;
   List<Scene> _scenes = [];
+  String _videoTitle = '';
+  String _videoDescription = '';
 
   void _onItemTapped(int index) {
     setState(() {
@@ -70,7 +69,6 @@ class _AppState extends State<App> {
       if (result != null) {
         if (result.files.single.bytes != null) {
           String jsonString = String.fromCharCodes(result.files.single.bytes!);
-          print('JSON Content (bytes): $jsonString');
           if (jsonString.isNotEmpty) {
             Map<String, dynamic> jsonMap = jsonDecode(jsonString);
             _processJson(jsonMap);
@@ -80,7 +78,6 @@ class _AppState extends State<App> {
         } else if (result.files.single.path != null) {
           File file = File(result.files.single.path!);
           String jsonString = await file.readAsString();
-          print('JSON Content (file): $jsonString');
           if (jsonString.isNotEmpty) {
             Map<String, dynamic> jsonMap = jsonDecode(jsonString);
             _processJson(jsonMap);
@@ -106,11 +103,13 @@ class _AppState extends State<App> {
 
     setState(() {
       _scenes = scenes;
+      _videoTitle = jsonMap['Title'];
+      _videoDescription = jsonMap['Description'];
     });
   }
 
   void _showError(String message) {
-    _scaffoldMessengerKey.currentState?.showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
       ),
@@ -132,7 +131,10 @@ class _AppState extends State<App> {
       case 3:
         return const WatermarksScreen();
       case 4:
-        return const UploadScreen();
+        return UploadScreen(
+          initialTitle: _videoTitle,
+          initialDescription: _videoDescription,
+        );
       default:
         return Text("$index screen");
     }
@@ -141,7 +143,6 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      scaffoldMessengerKey: _scaffoldMessengerKey,
       home: Scaffold(
         appBar: AppBar(
           title: const Text("Compose"),

@@ -2,7 +2,7 @@ class Scene {
   final int sceneNumber;
   final int duration;
   final String voiceOverText;
-  String text;
+  final String text;
   String description;
   String? imageUrl;
 
