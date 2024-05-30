@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/youtube/v3.dart' as youtube;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'custom_media_stream.dart';
 
 class YouTubeUploader {
   final GoogleSignIn _googleSignIn;
@@ -54,19 +56,22 @@ class YouTubeUploader {
   }
 
   Future<String> uploadVideo(AuthClient client, String filePath, String title,
-      String description) async {
+      String description, Function(double) onUploadProgress) async {
     final youtubeApi = youtube.YouTubeApi(client);
-    final media =
-        youtube.Media(File(filePath).openRead(), File(filePath).lengthSync());
+    final mediaFile = File(filePath);
+    final mediaLength = mediaFile.lengthSync();
 
-    final video = youtube.Video();
-    video.snippet = youtube.VideoSnippet();
-    video.snippet!.title = title;
-    video.snippet!.description = description;
-    video.snippet!.tags = ["shorts"];
-    video.snippet!.categoryId = "22";
-    video.status = youtube.VideoStatus();
-    video.status!.privacyStatus = "public";
+    final mediaStream =
+        CustomMediaStream(mediaFile.openRead(), mediaLength, onUploadProgress);
+    final media = youtube.Media(mediaStream, mediaLength);
+
+    final video = youtube.Video()
+      ..snippet = (youtube.VideoSnippet()
+        ..title = title
+        ..description = description
+        ..tags = ["shorts"]
+        ..categoryId = "22")
+      ..status = (youtube.VideoStatus()..privacyStatus = "public");
 
     final response = await youtubeApi.videos.insert(
       video,

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shorts_composer/oauth2/youtube_uploader.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UploadScreen extends StatefulWidget {
   final String initialTitle;
@@ -24,6 +25,9 @@ class _UploadScreenState extends State<UploadScreen> {
     clientId:
         '18038789658-mifrqrpenap8vred4cfulc1pmgkco5e8.apps.googleusercontent.com',
   );
+
+  double _uploadProgress = 0;
+  String? _videoUrl;
 
   @override
   void initState() {
@@ -58,10 +62,17 @@ class _UploadScreenState extends State<UploadScreen> {
           _videoFile!.path,
           _titleController.text,
           _descriptionController.text,
+          (progress) {
+            setState(() {
+              _uploadProgress = progress;
+            });
+          },
         );
+        setState(() {
+          _videoUrl = 'https://www.youtube.com/watch?v=$videoId';
+        });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              'Upload successful: https://www.youtube.com/watch?v=$videoId'),
+          content: Text('Upload successful: $_videoUrl'),
         ));
       } catch (e) {
         print(e);
@@ -104,10 +115,31 @@ class _UploadScreenState extends State<UploadScreen> {
               child: Text('Select Video'),
             ),
             SizedBox(height: 20),
+            _uploadProgress > 0 && _uploadProgress < 1
+                ? Column(
+                    children: [
+                      LinearProgressIndicator(value: _uploadProgress),
+                      SizedBox(height: 20),
+                    ],
+                  )
+                : SizedBox.shrink(),
             ElevatedButton(
               onPressed: _uploadVideo,
               child: Text('Upload Video'),
             ),
+            _videoUrl != null
+                ? Column(
+                    children: [
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          launch(_videoUrl!);
+                        },
+                        child: Text('Open Video in YouTube'),
+                      ),
+                    ],
+                  )
+                : SizedBox.shrink(),
           ],
         ),
       ),
