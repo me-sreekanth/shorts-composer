@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io'; // Import this package
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -43,7 +43,7 @@ class _AppState extends State<App> {
     final scene = _scenes[index];
     final imageUrl = await _fetchImageUrl(scene.description);
     setState(() {
-      _scenes[index].updateImageUrl(imageUrl);
+      _scenes[index].updateImageUrl(imageUrl, isLocal: false);
     });
   }
 
@@ -116,6 +116,14 @@ class _AppState extends State<App> {
     );
   }
 
+  void _onImageSelected(int index, String imagePath, bool isLocal) {
+    setState(() {
+      _scenes[index].updateImageUrl(imagePath,
+          isLocal:
+              isLocal); // Assuming you can use a file path directly, otherwise, upload the image and get the URL
+    });
+  }
+
   Widget _getScreenWidget(int index) {
     switch (index) {
       case 0:
@@ -123,6 +131,7 @@ class _AppState extends State<App> {
           scenes: _scenes,
           onDescriptionChanged: _onDescriptionChanged,
           onGenerateImage: _onGenerateImage,
+          onImageSelected: _onImageSelected,
         );
       case 1:
         return const VoiceoversScreen();

@@ -58,6 +58,8 @@ PODS:
   - GTMSessionFetcher/Core (3.4.1)
   - GTMSessionFetcher/Full (3.4.1):
     - GTMSessionFetcher/Core
+  - image_picker_ios (0.0.1):
+    - Flutter
   - SDWebImage (5.19.2):
     - SDWebImage/Core (= 5.19.2)
   - SDWebImage/Core (5.19.2)
@@ -70,6 +72,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
   - GoogleSignIn
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 SPEC REPOS:
@@ -90,6 +93,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   google_sign_in_ios:
     :path: ".symlinks/plugins/google_sign_in_ios/darwin"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
@@ -103,6 +108,7 @@ SPEC CHECKSUMS:
   GoogleSignIn: d4281ab6cf21542b1cfaff85c191f230b399d2db
   GTMAppAuth: f69bd07d68cd3b766125f7e072c45d7340dea0de
   GTMSessionFetcher: 8000756fc1c19d2e5697b90311f7832d2e33f6cd
+  image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
   SDWebImage: dfe95b2466a9823cf9f0c6d01217c06550d7b29a
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe

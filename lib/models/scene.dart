@@ -5,6 +5,7 @@ class Scene {
   final String text;
   String description;
   String? imageUrl;
+  bool isLocalImage;
 
   Scene({
     required this.sceneNumber,
@@ -13,6 +14,7 @@ class Scene {
     required this.text,
     required this.description,
     this.imageUrl,
+    this.isLocalImage = false,
   });
 
   factory Scene.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,8 @@ class Scene {
       voiceOverText: json['VoiceOverText'],
       text: json['Text'],
       description: json['Description'],
+      imageUrl: json['imageUrl'],
+      isLocalImage: json['isLocalImage'] ?? false,
     );
   }
 
@@ -29,7 +33,8 @@ class Scene {
     description = newDescription;
   }
 
-  void updateImageUrl(String newImageUrl) {
+  void updateImageUrl(String newImageUrl, {bool isLocal = false}) {
     imageUrl = newImageUrl;
+    isLocalImage = isLocal;
   }
 }
