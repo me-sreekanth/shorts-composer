@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:io'; // Import this package
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shorts_composer/models/scene.dart';
+import 'package:shorts_composer/services/api_service.dart';
 
 import 'menus/scenes_screen.dart';
 import 'menus/voiceovers_screen.dart';
@@ -22,6 +23,8 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  final ApiService _apiService = ApiService();
+
   int _selectedIndex = 0;
   List<Scene> _scenes = [];
   String _videoTitle = '';
@@ -39,23 +42,23 @@ class _AppState extends State<App> {
     });
   }
 
-  Future<void> _onGenerateImage(int index) async {
-    final scene = _scenes[index];
-    final imageUrl = await _fetchImageUrl(scene.description);
+  void _onImageSelected(int index, String imagePath, {bool isLocal = false}) {
     setState(() {
-      _scenes[index].updateImageUrl(imageUrl, isLocal: false);
+      _scenes[index].updateImageUrl(imagePath,
+          isLocal:
+              isLocal); // Assuming you can use a file path directly, otherwise, upload the image and get the URL
     });
   }
 
-  Future<String> _fetchImageUrl(String description) async {
-    // Replace with your actual API call to fetch the image URL
-    final response = await http.get(
-        Uri.parse('https://example.com/api/getImage?description=$description'));
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body)['imageUrl'];
-    } else {
-      throw Exception('Failed to load image');
+  Future<void> _onGenerateImage(int index) async {
+    final scene = _scenes[index];
+    final processId =
+        await _apiService.generateImage(scene.description, scene.sceneNumber);
+    if (processId != null) {
+      final imageUrl = await _apiService.fetchStatus(processId);
+      if (imageUrl != null) {
+        _onImageSelected(index, imageUrl);
+      }
     }
   }
 
@@ -116,22 +119,14 @@ class _AppState extends State<App> {
     );
   }
 
-  void _onImageSelected(int index, String imagePath, bool isLocal) {
-    setState(() {
-      _scenes[index].updateImageUrl(imagePath,
-          isLocal:
-              isLocal); // Assuming you can use a file path directly, otherwise, upload the image and get the URL
-    });
-  }
-
   Widget _getScreenWidget(int index) {
     switch (index) {
       case 0:
         return ScenesScreen(
           scenes: _scenes,
           onDescriptionChanged: _onDescriptionChanged,
-          onGenerateImage: _onGenerateImage,
-          onImageSelected: _onImageSelected,
+          onImageSelected: (index, path, {isLocal = false}) =>
+              _onImageSelected(index, path, isLocal: isLocal),
         );
       case 1:
         return const VoiceoversScreen();
