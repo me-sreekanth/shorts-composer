@@ -43,6 +43,7 @@ dependencies:
   google_sign_in: ^6.2.1
   image_picker: ^0.8.4+11
   path_provider: ^2.0.2
+  just_audio: ^0.9.18 
 
 dev_dependencies:
   flutter_test:

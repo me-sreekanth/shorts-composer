@@ -1,7 +1,7 @@
 class Scene {
   final int sceneNumber;
   final int duration;
-  final String voiceOverText;
+  String voiceOverText; // Remove 'final'
   final String text;
   String description;
   String? imageUrl;
@@ -24,8 +24,6 @@ class Scene {
       voiceOverText: json['VoiceOverText'],
       text: json['Text'],
       description: json['Description'],
-      imageUrl: json['imageUrl'],
-      isLocalImage: json['isLocalImage'] ?? false,
     );
   }
 
@@ -36,5 +34,9 @@ class Scene {
   void updateImageUrl(String newImageUrl, {bool isLocal = false}) {
     imageUrl = newImageUrl;
     isLocalImage = isLocal;
+  }
+
+  void updateVoiceOverText(String newVoiceOverText) {
+    voiceOverText = newVoiceOverText;
   }
 }

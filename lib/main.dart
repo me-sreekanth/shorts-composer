@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
+import 'package:shorts_composer/menus/voiceovers_screen.dart';
 
 import 'menus/scenes_screen.dart';
 import 'menus/voiceovers_screen.dart';
@@ -129,7 +129,7 @@ class _AppState extends State<App> {
               _onImageSelected(index, path, isLocal: isLocal),
         );
       case 1:
-        return const VoiceoversScreen();
+        return VoiceoversScreen(scenes: _scenes);
       case 2:
         return const TranscribeScreen();
       case 3:
@@ -147,42 +147,44 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text("Compose"),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-                icon: Icon(Icons.image),
-                label: 'Scenes',
-                tooltip: 'Add scenes'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.voice_chat),
-                label: 'Voiceovers',
-                tooltip: 'Add voiceovers'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.transcribe),
-                label: 'Transcribe',
-                tooltip: 'Generate transcriptions'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.branding_watermark),
-                label: 'Watermarks',
-                tooltip: 'Add watermarks'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.upload),
-                label: 'Upload',
-                tooltip: 'Upload to YouTube'),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.amber[800],
-          unselectedItemColor: Colors.black,
-          onTap: _onItemTapped,
-        ),
-        body: _getScreenWidget(_selectedIndex),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _uploadJson,
-          child: Icon(Icons.upload_file),
+      home: ScaffoldMessenger(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text("Compose"),
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.image),
+                  label: 'Scenes',
+                  tooltip: 'Add scenes'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.voice_chat),
+                  label: 'Voiceovers',
+                  tooltip: 'Add voiceovers'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.transcribe),
+                  label: 'Transcribe',
+                  tooltip: 'Generate transcriptions'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.branding_watermark),
+                  label: 'Watermarks',
+                  tooltip: 'Add watermarks'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.upload),
+                  label: 'Upload',
+                  tooltip: 'Upload to YouTube'),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.amber[800],
+            unselectedItemColor: Colors.black,
+            onTap: _onItemTapped,
+          ),
+          body: _getScreenWidget(_selectedIndex),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _uploadJson,
+            child: Icon(Icons.upload_file),
+          ),
         ),
       ),
     );
