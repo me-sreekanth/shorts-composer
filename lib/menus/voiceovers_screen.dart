@@ -1,112 +1,71 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:shorts_composer/models/scene.dart';
+import 'package:shorts_composer/services/api_service.dart';
 
 class VoiceoversScreen extends StatefulWidget {
   final List<Scene> scenes;
+  final ApiService apiService;
+  final Function(int, String, {bool isLocal}) onVoiceoverSelected;
 
-  VoiceoversScreen({required this.scenes});
+  VoiceoversScreen({
+    required this.scenes,
+    required this.apiService,
+    required this.onVoiceoverSelected,
+  });
 
   @override
   _VoiceoversScreenState createState() => _VoiceoversScreenState();
 }
 
 class _VoiceoversScreenState extends State<VoiceoversScreen> {
-  final Map<int, String> _voiceoverPaths = {};
-  final Map<int, bool> _isLoading = {};
-  final Map<int, TextEditingController> _controllers = {};
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isLoading = false;
+  int _loadingIndex = -1;
 
-  @override
-  void initState() {
-    super.initState();
-    for (int i = 0; i < widget.scenes.length; i++) {
-      _controllers[i] =
-          TextEditingController(text: widget.scenes[i].voiceOverText);
-    }
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _controllers.values) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _generateVoiceOver(int index) async {
-    setState(() {
-      _isLoading[index] = true;
-    });
-
-    final scene = widget.scenes[index];
-    final voiceoverText = _controllers[index]?.text ?? scene.voiceOverText;
-    final voiceoverPath =
-        await _fetchVoiceOver(voiceoverText, scene.sceneNumber);
-
-    setState(() {
-      _isLoading[index] = false;
-      if (voiceoverPath != null) {
-        _voiceoverPaths[index] = voiceoverPath;
-      }
-    });
-  }
-
-  Future<String?> _fetchVoiceOver(String text, int sceneNumber) async {
-    const apiKey = '193f83bf36e4f903ec4664616ca2ef49';
-    const voiceID = 'pNInz6obpgDQGcFmaJgB';
-    final outputDirectory = (await getApplicationDocumentsDirectory()).path;
-
-    final data = {
-      'text': text,
-      'model_id': 'eleven_monolingual_v1',
-      'voice_settings': {
-        'stability': 0,
-        'similarity_boost': 0,
-        'style': 0,
-        'use_speaker_boost': true,
-      },
-    };
-
-    final response = await http.post(
-      Uri.parse(
-          'https://api.elevenlabs.io/v1/text-to-speech/$voiceID?optimize_streaming_latency=0&output_format=mp3_44100_128'),
-      headers: {
-        'accept': 'audio/mpeg',
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(data),
+  void _pickVoiceover(int index) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['mp3'],
     );
-
-    if (response.statusCode == 200) {
-      final filePath = '$outputDirectory/$sceneNumber-scene-voiceover.mp3';
-      final file = File(filePath);
-      await file.writeAsBytes(response.bodyBytes);
-      return filePath;
-    } else {
-      print('Error generating voice-over: ${response.reasonPhrase}');
-      return null;
+    if (result != null && result.files.single.path != null) {
+      widget.onVoiceoverSelected(index, result.files.single.path!,
+          isLocal: true);
     }
   }
 
-  void _playVoiceOver(int index) async {
-    final filePath = _voiceoverPaths[index];
-    if (filePath != null) {
-      await _audioPlayer.setFilePath(filePath);
-      _audioPlayer.play();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Voice-over not generated yet.'),
-        ),
-      );
+  Future<void> _generateVoiceover(int index) async {
+    setState(() {
+      _isLoading = true;
+      _loadingIndex = index;
+    });
+
+    try {
+      final scene = widget.scenes[index];
+      final voiceoverUrl = await widget.apiService
+          .generateVoiceover(scene.text, scene.sceneNumber);
+      if (voiceoverUrl != null) {
+        final localVoiceoverPath = await widget.apiService
+            .downloadImage(voiceoverUrl, scene.sceneNumber);
+        widget.onVoiceoverSelected(index, localVoiceoverPath, isLocal: true);
+      } else {
+        _showError('Failed to generate voiceover.');
+      }
+    } catch (e) {
+      _showError('Error generating voiceover: $e');
     }
+
+    setState(() {
+      _isLoading = false;
+      _loadingIndex = -1;
+    });
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
   }
 
   @override
@@ -116,46 +75,30 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       itemBuilder: (context, index) {
         final scene = widget.scenes[index];
         return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
+          child: ListTile(
+            title: Text(scene.text),
+            subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: _controllers[index],
-                  decoration: InputDecoration(labelText: 'Voice Over Text'),
-                  onChanged: (value) {
-                    setState(() {
-                      // Update the scene's voiceOverText in the state
-                      scene.updateVoiceOverText(value);
-                    });
-                  },
-                ),
-                SizedBox(height: 10),
+                if (scene.voiceoverUrl != null)
+                  Text('Voiceover: ${scene.voiceoverUrl}')
+                else
+                  Text('No Voiceover'),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
-                      onPressed: () {
-                        _generateVoiceOver(index);
-                      },
-                      child: _isLoading[index] == true
-                          ? CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            )
-                          : Text('Generate Voice-over'),
+                      onPressed: () => _pickVoiceover(index),
+                      child: Text('Pick'),
                     ),
+                    SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: _voiceoverPaths.containsKey(index)
-                          ? () {
-                              _playVoiceOver(index);
-                            }
-                          : null,
-                      child: Text('Play Voice-over'),
+                      onPressed: () => _generateVoiceover(index),
+                      child: Text('Generate'),
                     ),
                   ],
                 ),
+                if (_isLoading && _loadingIndex == index)
+                  LinearProgressIndicator(),
               ],
             ),
           ),

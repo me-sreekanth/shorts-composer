@@ -1,29 +1,42 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
+import 'package:shorts_composer/services/video_service.dart';
+import 'package:shorts_composer/menus/preview_screen.dart';
+import 'package:shorts_composer/menus/scenes_screen.dart';
 import 'package:shorts_composer/menus/voiceovers_screen.dart';
-
-import 'menus/scenes_screen.dart';
-import 'menus/voiceovers_screen.dart';
-import 'menus/transcribe_screen.dart';
-import 'menus/watermarks_screen.dart';
-import 'menus/upload_screen.dart';
+import 'package:shorts_composer/menus/transcribe_screen.dart';
+import 'package:shorts_composer/menus/watermarks_screen.dart';
+import 'package:shorts_composer/menus/upload_screen.dart';
 
 void main() {
   runApp(App());
 }
 
-class App extends StatefulWidget {
+class App extends StatelessWidget {
   @override
-  _AppState createState() => _AppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: ScaffoldMessenger(
+        child: Scaffold(
+          body: AppBody(),
+        ),
+      ),
+    );
+  }
 }
 
-class _AppState extends State<App> {
+class AppBody extends StatefulWidget {
+  @override
+  _AppBodyState createState() => _AppBodyState();
+}
+
+class _AppBodyState extends State<AppBody> {
   final ApiService _apiService = ApiService();
+  final VideoService _videoService = VideoService();
 
   int _selectedIndex = 0;
   List<Scene> _scenes = [];
@@ -44,9 +57,14 @@ class _AppState extends State<App> {
 
   void _onImageSelected(int index, String imagePath, {bool isLocal = false}) {
     setState(() {
-      _scenes[index].updateImageUrl(imagePath,
-          isLocal:
-              isLocal); // Assuming you can use a file path directly, otherwise, upload the image and get the URL
+      _scenes[index].updateImageUrl(imagePath, isLocal: isLocal);
+    });
+  }
+
+  void _onVoiceoverSelected(int index, String voiceoverUrl,
+      {bool isLocal = false}) {
+    setState(() {
+      _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
     });
   }
 
@@ -57,7 +75,9 @@ class _AppState extends State<App> {
     if (processId != null) {
       final imageUrl = await _apiService.fetchStatus(processId);
       if (imageUrl != null) {
-        _onImageSelected(index, imageUrl);
+        final localImagePath =
+            await _apiService.downloadImage(imageUrl, scene.sceneNumber);
+        _onImageSelected(index, localImagePath, isLocal: true);
       }
     }
   }
@@ -112,11 +132,26 @@ class _AppState extends State<App> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
+    final snackBar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  Future<void> _createAndSaveVideo() async {
+    try {
+      final outputPath = await _videoService.createVideo(_scenes);
+      if (outputPath != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PreviewScreen(videoPath: outputPath),
+          ),
+        );
+      } else {
+        _showError('Failed to create video.');
+      }
+    } catch (e) {
+      _showError('Error creating video: $e');
+    }
   }
 
   Widget _getScreenWidget(int index) {
@@ -127,9 +162,14 @@ class _AppState extends State<App> {
           onDescriptionChanged: _onDescriptionChanged,
           onImageSelected: (index, path, {isLocal = false}) =>
               _onImageSelected(index, path, isLocal: isLocal),
+          onGenerateImage: _onGenerateImage,
         );
       case 1:
-        return VoiceoversScreen(scenes: _scenes);
+        return VoiceoversScreen(
+          scenes: _scenes,
+          apiService: _apiService,
+          onVoiceoverSelected: _onVoiceoverSelected,
+        );
       case 2:
         return const TranscribeScreen();
       case 3:
@@ -146,46 +186,46 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: ScaffoldMessenger(
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text("Compose"),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Compose"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.video_library),
+            onPressed: _createAndSaveVideo,
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.image),
-                  label: 'Scenes',
-                  tooltip: 'Add scenes'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.voice_chat),
-                  label: 'Voiceovers',
-                  tooltip: 'Add voiceovers'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.transcribe),
-                  label: 'Transcribe',
-                  tooltip: 'Generate transcriptions'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.branding_watermark),
-                  label: 'Watermarks',
-                  tooltip: 'Add watermarks'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.upload),
-                  label: 'Upload',
-                  tooltip: 'Upload to YouTube'),
-            ],
-            currentIndex: _selectedIndex,
-            selectedItemColor: Colors.amber[800],
-            unselectedItemColor: Colors.black,
-            onTap: _onItemTapped,
-          ),
-          body: _getScreenWidget(_selectedIndex),
-          floatingActionButton: FloatingActionButton(
-            onPressed: _uploadJson,
-            child: Icon(Icons.upload_file),
-          ),
-        ),
+        ],
+      ),
+      body: _getScreenWidget(_selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+              icon: Icon(Icons.image), label: 'Scenes', tooltip: 'Add scenes'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.voice_chat),
+              label: 'Voiceovers',
+              tooltip: 'Add voiceovers'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.transcribe),
+              label: 'Transcribe',
+              tooltip: 'Generate transcriptions'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.branding_watermark),
+              label: 'Watermarks',
+              tooltip: 'Add watermarks'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.upload),
+              label: 'Upload',
+              tooltip: 'Upload to YouTube'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.black,
+        onTap: _onItemTapped,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _uploadJson,
+        child: Icon(Icons.upload_file),
       ),
     );
   }
