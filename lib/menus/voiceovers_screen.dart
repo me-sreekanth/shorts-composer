@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
+import 'package:just_audio/just_audio.dart';
 
 class VoiceoversScreen extends StatefulWidget {
   final List<Scene> scenes;
@@ -21,6 +22,23 @@ class VoiceoversScreen extends StatefulWidget {
 class _VoiceoversScreenState extends State<VoiceoversScreen> {
   bool _isLoading = false;
   int _loadingIndex = -1;
+  final List<AudioPlayer> _audioPlayers = [];
+  final List<bool> _isPlaying = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayers.addAll(widget.scenes.map((_) => AudioPlayer()));
+    _isPlaying.addAll(widget.scenes.map((_) => false));
+  }
+
+  @override
+  void dispose() {
+    for (var player in _audioPlayers) {
+      player.dispose();
+    }
+    super.dispose();
+  }
 
   void _pickVoiceover(int index) async {
     final result = await FilePicker.platform.pickFiles(
@@ -30,6 +48,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     if (result != null && result.files.single.path != null) {
       widget.onVoiceoverSelected(index, result.files.single.path!,
           isLocal: true);
+      await _audioPlayers[index].setFilePath(result.files.single.path!);
     }
   }
 
@@ -47,6 +66,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         final localVoiceoverPath = await widget.apiService
             .downloadImage(voiceoverUrl, scene.sceneNumber);
         widget.onVoiceoverSelected(index, localVoiceoverPath, isLocal: true);
+        await _audioPlayers[index].setFilePath(localVoiceoverPath);
       } else {
         _showError('Failed to generate voiceover.');
       }
@@ -74,6 +94,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       itemCount: widget.scenes.length,
       itemBuilder: (context, index) {
         final scene = widget.scenes[index];
+        final player = _audioPlayers[index];
         return Card(
           child: ListTile(
             title: Text(scene.text),
@@ -99,10 +120,72 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                 ),
                 if (_isLoading && _loadingIndex == index)
                   LinearProgressIndicator(),
+                if (scene.voiceoverUrl != null) ...[
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                            _isPlaying[index] ? Icons.pause : Icons.play_arrow),
+                        onPressed: () async {
+                          if (_isPlaying[index]) {
+                            await player.pause();
+                          } else {
+                            await player.play();
+                          }
+                          setState(() {
+                            _isPlaying[index] = !_isPlaying[index];
+                          });
+                        },
+                      ),
+                      Expanded(
+                        child: StreamBuilder<Duration>(
+                          stream: player.positionStream,
+                          builder: (context, snapshot) {
+                            final position = snapshot.data ?? Duration.zero;
+                            final duration = player.duration ?? Duration.zero;
+                            return SeekBar(
+                              duration: duration,
+                              position: position,
+                              onChangeEnd: (newPosition) {
+                                player.seek(newPosition);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
         );
+      },
+    );
+  }
+}
+
+class SeekBar extends StatelessWidget {
+  final Duration duration;
+  final Duration position;
+  final ValueChanged<Duration> onChangeEnd;
+
+  SeekBar({
+    required this.duration,
+    required this.position,
+    required this.onChangeEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Slider(
+      min: 0,
+      max: duration.inMilliseconds.toDouble(),
+      value: position.inMilliseconds
+          .toDouble()
+          .clamp(0, duration.inMilliseconds.toDouble()),
+      onChanged: (value) {
+        onChangeEnd(Duration(milliseconds: value.round()));
       },
     );
   }
