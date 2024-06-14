@@ -1,6 +1,7 @@
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:shorts_composer/models/scene.dart';
 
@@ -12,12 +13,26 @@ class VideoService {
     try {
       final Directory directory = await getApplicationDocumentsDirectory();
       final String tempDir = directory.path;
+      final Random random = Random();
+
+      // Define the animation effects
+      final List<String> effects = [
+        "zoompan=z='min(zoom+0.0015,1.5)':d={duration}:s=1080x1920",
+        "zoompan=z='max(zoom-0.0015,1.0)':d={duration}:s=1080x1920",
+        "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':d={duration}:s=1080x1920",
+        "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
+        "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d={duration}:s=1080x1920"
+      ];
 
       // Prepare the commands to generate video clips from scenes
       for (var scene in scenes) {
         final imagePath = scene.imageUrl!;
         final audioPath = scene.voiceoverUrl!;
         final outputPath = '$tempDir/${scene.sceneNumber}-scene.mp4';
+
+        // Select a random effect for the scene
+        final selectedEffect = effects[random.nextInt(effects.length)]
+            .replaceAll("{duration}", (scene.duration * 25).toString());
 
         final ffmpegCommand = [
           '-y',
@@ -28,7 +43,7 @@ class VideoService {
           '-i',
           audioPath,
           '-vf',
-          'zoompan=z=\'min(zoom+0.0015,1.5)\':d=${scene.duration * 25}:s=1080x1920',
+          selectedEffect,
           '-c:v',
           'mpeg4',
           '-c:a',

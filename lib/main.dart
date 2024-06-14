@@ -42,6 +42,7 @@ class _AppBodyState extends State<AppBody> {
   List<Scene> _scenes = [];
   String _videoTitle = '';
   String _videoDescription = '';
+  bool _isLoading = false;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -136,13 +137,11 @@ class _AppBodyState extends State<AppBody> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  void _onBackgroundMusicSelected(String? path) {
-    setState(() {
-      _videoService.backgroundMusicPath = path;
-    });
-  }
-
   Future<void> _createAndSaveVideo() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final outputPath = await _videoService.createVideo(_scenes);
       if (outputPath != null) {
@@ -158,6 +157,10 @@ class _AppBodyState extends State<AppBody> {
     } catch (e) {
       _showError('Error creating video: $e');
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Widget _getScreenWidget(int index) {
@@ -177,9 +180,7 @@ class _AppBodyState extends State<AppBody> {
           onVoiceoverSelected: _onVoiceoverSelected,
         );
       case 2:
-        return TranscribeScreen(
-          onBackgroundMusicSelected: _onBackgroundMusicSelected,
-        );
+        return TranscribeScreen(onMusicSelected: _onMusicSelected);
       case 3:
         return const WatermarksScreen();
       case 4:
@@ -190,6 +191,12 @@ class _AppBodyState extends State<AppBody> {
       default:
         return Text("$index screen");
     }
+  }
+
+  void _onMusicSelected(String path) {
+    setState(() {
+      _videoService.backgroundMusicPath = path;
+    });
   }
 
   @override
@@ -204,7 +211,18 @@ class _AppBodyState extends State<AppBody> {
           ),
         ],
       ),
-      body: _getScreenWidget(_selectedIndex),
+      body: Stack(
+        children: [
+          _getScreenWidget(_selectedIndex),
+          if (_isLoading)
+            Container(
+              color: Colors.black45,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
