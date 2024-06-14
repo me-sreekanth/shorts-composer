@@ -27,6 +27,8 @@ class VideoService {
           imagePath,
           '-i',
           audioPath,
+          '-vf',
+          'zoompan=z=\'min(zoom+0.0015,1.5)\':d=${scene.duration * 25}:s=1080x1920',
           '-c:v',
           'mpeg4',
           '-c:a',
