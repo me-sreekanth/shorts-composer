@@ -16,6 +16,17 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 
+
+Video mixing (FFMPEG)
+
+1. Mix scene and audio for each scene
+2. Add background music
+3. Add silence to the audio for each scene at the beggning and end
+4. 
+
+
+
+
 Pending items:
 
 1. Preview the mixed images and voiceovers

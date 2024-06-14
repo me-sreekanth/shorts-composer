@@ -6,6 +6,7 @@ import 'package:shorts_composer/models/scene.dart';
 
 class VideoService {
   final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
+  String? backgroundMusicPath;
 
   Future<String?> createVideo(List<Scene> scenes) async {
     try {
@@ -20,12 +21,19 @@ class VideoService {
 
         final ffmpegCommand = [
           '-y',
+          '-loop',
+          '1',
           '-i',
           imagePath,
           '-i',
           audioPath,
           '-c:v',
           'mpeg4',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '192k',
+          '-shortest',
           '-t',
           scene.duration.toString(),
           outputPath
@@ -71,6 +79,36 @@ class VideoService {
       if (concatResult != 0) {
         print('FFmpeg concat command failed with result: $concatResult');
         throw Exception('Error concatenating video files');
+      }
+
+      // Mix background music with the concatenated video
+      if (backgroundMusicPath != null) {
+        final finalOutputPath = '$tempDir/final_video_with_music.mp4';
+
+        final mixCommand = [
+          '-y',
+          '-i',
+          outputVideoPath,
+          '-i',
+          backgroundMusicPath!,
+          '-filter_complex',
+          '[1]volume=0.2[a1];[0][a1]amix=inputs=2:duration=first:dropout_transition=2',
+          '-c:v',
+          'copy',
+          '-c:a',
+          'aac',
+          finalOutputPath
+        ];
+
+        print('Executing FFmpeg mix command: $mixCommand');
+
+        int mixResult = await _flutterFFmpeg.executeWithArguments(mixCommand);
+        if (mixResult != 0) {
+          print('FFmpeg mix command failed with result: $mixResult');
+          throw Exception('Error mixing background music');
+        }
+
+        return finalOutputPath;
       }
 
       return outputVideoPath;

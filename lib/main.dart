@@ -136,6 +136,12 @@ class _AppBodyState extends State<AppBody> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  void _onBackgroundMusicSelected(String? path) {
+    setState(() {
+      _videoService.backgroundMusicPath = path;
+    });
+  }
+
   Future<void> _createAndSaveVideo() async {
     try {
       final outputPath = await _videoService.createVideo(_scenes);
@@ -171,7 +177,9 @@ class _AppBodyState extends State<AppBody> {
           onVoiceoverSelected: _onVoiceoverSelected,
         );
       case 2:
-        return const TranscribeScreen();
+        return TranscribeScreen(
+          onBackgroundMusicSelected: _onBackgroundMusicSelected,
+        );
       case 3:
         return const WatermarksScreen();
       case 4:
