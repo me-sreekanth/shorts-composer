@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:shorts_composer/services/transcription_service.dart';
 
 class PreviewScreen extends StatefulWidget {
   final String videoPath;
@@ -14,7 +15,12 @@ class PreviewScreen extends StatefulWidget {
 
 class _PreviewScreenState extends State<PreviewScreen> {
   late VideoPlayerController _controller;
+  late Future<void> _initializeVideoPlayerFuture;
   bool _isPlaying = false;
+  String _transcription = '';
+  List<String> _transcriptionWords = [];
+  int _currentWordIndex = 0;
+  bool _isTranscribing = true;
 
   @override
   void initState() {
@@ -25,6 +31,36 @@ class _PreviewScreenState extends State<PreviewScreen> {
         _controller.play();
         _isPlaying = true;
       });
+
+    _initializeVideoPlayerFuture = _controller.initialize();
+
+    _generateTranscription();
+  }
+
+  Future<void> _generateTranscription() async {
+    TranscriptionService transcriptionService = TranscriptionService();
+    String transcription =
+        await transcriptionService.transcribeVideo(widget.videoPath);
+
+    setState(() {
+      _transcription = transcription;
+      _transcriptionWords = transcription.split(' ');
+      _isTranscribing = false;
+    });
+
+    _startTranscriptionAnimation();
+  }
+
+  void _startTranscriptionAnimation() {
+    _controller.addListener(() {
+      final position = _controller.value.position.inSeconds;
+      if (position > _currentWordIndex &&
+          _currentWordIndex < _transcriptionWords.length) {
+        setState(() {
+          _currentWordIndex = position;
+        });
+      }
+    });
   }
 
   @override
@@ -49,6 +85,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
     _controller.play();
     setState(() {
       _isPlaying = true;
+      _currentWordIndex = 0;
     });
   }
 
@@ -57,8 +94,11 @@ class _PreviewScreenState extends State<PreviewScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          _controller.value.isInitialized
-              ? GestureDetector(
+          FutureBuilder(
+            future: _initializeVideoPlayerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return GestureDetector(
                   onTap: _togglePlayPause,
                   child: SizedBox.expand(
                     child: FittedBox(
@@ -70,8 +110,28 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       ),
                     ),
                   ),
-                )
-              : Center(child: CircularProgressIndicator()),
+                );
+              } else {
+                return Center(child: CircularProgressIndicator());
+              }
+            },
+          ),
+          if (!_isTranscribing &&
+              _currentWordIndex < _transcriptionWords.length)
+            Center(
+              child: Container(
+                padding: EdgeInsets.all(8.0),
+                color: Colors.black54,
+                child: Text(
+                  _transcriptionWords[_currentWordIndex],
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             bottom: 50,
             left: 0,
