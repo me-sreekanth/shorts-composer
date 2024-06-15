@@ -146,6 +146,7 @@ class _AppBodyState extends State<AppBody> {
     try {
       final outputPath = await _videoService.createVideo(_scenes);
       if (outputPath != null) {
+        Navigator.of(context).pop(); // Close the dialog
         setState(() {
           _isLoading = false;
         });
@@ -157,12 +158,14 @@ class _AppBodyState extends State<AppBody> {
         );
       } else {
         _showError('Failed to create video.');
+        Navigator.of(context).pop(); // Close the dialog
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
       _showError('Error creating video: $e');
+      Navigator.of(context).pop(); // Close the dialog
       setState(() {
         _isLoading = false;
       });

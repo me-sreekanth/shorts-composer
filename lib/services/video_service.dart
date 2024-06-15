@@ -52,7 +52,8 @@ class VideoService {
           '192k',
           '-shortest',
           '-t',
-          scene.duration.toString(),
+          scene.duration
+              .toString(), // Ensure the duration matches the voiceover
           outputPath
         ];
 
