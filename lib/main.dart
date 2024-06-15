@@ -43,6 +43,7 @@ class _AppBodyState extends State<AppBody> {
   String _videoTitle = '';
   String _videoDescription = '';
   bool _isLoading = false;
+  String _loadingText = 'Generating video...';
 
   void _onItemTapped(int index) {
     setState(() {
@@ -145,6 +146,9 @@ class _AppBodyState extends State<AppBody> {
     try {
       final outputPath = await _videoService.createVideo(_scenes);
       if (outputPath != null) {
+        setState(() {
+          _isLoading = false;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -153,14 +157,64 @@ class _AppBodyState extends State<AppBody> {
         );
       } else {
         _showError('Failed to create video.');
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       _showError('Error creating video: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
 
-    setState(() {
-      _isLoading = false;
-    });
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10.0)),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                strokeWidth: 6.0,
+              ),
+              SizedBox(height: 20),
+              Text(
+                _loadingText,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Please wait while we process your video.',
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _isLoading = false;
+                  });
+                },
+                child: Text('Cancel'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _getScreenWidget(int index) {
@@ -207,22 +261,14 @@ class _AppBodyState extends State<AppBody> {
         actions: [
           IconButton(
             icon: Icon(Icons.video_library),
-            onPressed: _createAndSaveVideo,
+            onPressed: () {
+              _showLoadingDialog();
+              _createAndSaveVideo();
+            },
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          _getScreenWidget(_selectedIndex),
-          if (_isLoading)
-            Container(
-              color: Colors.black45,
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-        ],
-      ),
+      body: _getScreenWidget(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
