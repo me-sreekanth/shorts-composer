@@ -44,6 +44,7 @@ class _AppBodyState extends State<AppBody> {
   String _videoDescription = '';
   bool _isLoading = false;
   String _loadingText = 'Generating video...';
+  String? _assFilePath;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -153,7 +154,8 @@ class _AppBodyState extends State<AppBody> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PreviewScreen(videoPath: outputPath),
+            builder: (context) =>
+                PreviewScreen(videoPath: outputPath, assFilePath: _assFilePath),
           ),
         );
       } else {
@@ -237,7 +239,14 @@ class _AppBodyState extends State<AppBody> {
           onVoiceoverSelected: _onVoiceoverSelected,
         );
       case 2:
-        return TranscribeScreen(onMusicSelected: _onMusicSelected);
+        return TranscribeScreen(
+          onMusicSelected: _onMusicSelected,
+          onAssFileSelected: (path) {
+            setState(() {
+              _assFilePath = path;
+            });
+          },
+        );
       case 3:
         return const WatermarksScreen();
       case 4:

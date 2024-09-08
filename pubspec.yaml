@@ -21,10 +21,11 @@ dependencies:
   path_provider: ^2.0.2
   just_audio: ^0.9.18
   audioplayers: ^0.20.1
-  flutter_ffmpeg: ^0.4.0
+  ffmpeg_kit_flutter_full_gpl: ^4.5.1
   video_player: ^2.4.2
   permission_handler: ^10.2.0
   gallery_saver: ^2.3.2
+  sprintf: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -33,3 +34,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - lib/assets/response_transcription.json

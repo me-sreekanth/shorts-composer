@@ -7,6 +7,7 @@ class Scene {
   bool isLocalImage;
   String? voiceoverUrl;
   bool isLocalVoiceover;
+  String? videoPath; // Add this field
 
   Scene({
     required this.sceneNumber,
@@ -17,6 +18,7 @@ class Scene {
     this.isLocalImage = false,
     this.voiceoverUrl,
     this.isLocalVoiceover = false,
+    this.videoPath, // Initialize this field
   });
 
   factory Scene.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class Scene {
       isLocalImage: json['IsLocalImage'] ?? false,
       voiceoverUrl: json['VoiceoverUrl'],
       isLocalVoiceover: json['IsLocalVoiceover'] ?? false,
+      videoPath: json['VideoPath'], // Add this line
     );
   }
 
@@ -48,5 +51,9 @@ class Scene {
   void updateVoiceoverUrl(String newVoiceoverUrl, {bool isLocal = false}) {
     voiceoverUrl = newVoiceoverUrl;
     isLocalVoiceover = isLocal;
+  }
+
+  void updateVideoPath(String newVideoPath) {
+    videoPath = newVideoPath;
   }
 }
