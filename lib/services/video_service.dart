@@ -15,6 +15,12 @@ class VideoService {
       final String tempDir = directory.path;
       final Random random = Random();
 
+      final List<String> effects = [
+        "zoompan=z='zoom+0.0015':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
+        "zoompan=z='zoom+0.005':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=25:s=1080x1920",
+        "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d={duration}:s=1080x1920",
+      ];
+
       // Prepare the commands to generate video clips from scenes
       for (var scene in scenes) {
         final imagePath = scene.imageUrl!;
@@ -22,7 +28,11 @@ class VideoService {
         final outputPath = '$tempDir/${scene.sceneNumber}-scene.mp4';
         scene.updateVideoPath(outputPath);
 
-        // FFmpeg command to generate video clips with voiceover
+        // Select a random effect for the scene
+        final selectedEffect = effects[random.nextInt(effects.length)]
+            .replaceAll("{duration}", (scene.duration * 25).toString());
+
+        // FFmpeg command to generate video clips with voiceover and animation
         final ffmpegCommand = [
           '-y',
           '-loop',
@@ -31,8 +41,12 @@ class VideoService {
           imagePath,
           '-i',
           audioPath,
+          '-vf',
+          selectedEffect,
           '-c:v',
-          'mpeg4',
+          'libx264',
+          '-pix_fmt',
+          'yuv420p',
           '-c:a',
           'aac',
           '-b:a',
@@ -43,10 +57,15 @@ class VideoService {
           outputPath
         ];
 
+        print(
+            'Executing FFmpeg command for scene ${scene.sceneNumber}: $ffmpegCommand');
+
         var session = await FFmpegKit.execute(ffmpegCommand.join(' '));
         var returnCode = await session.getReturnCode();
         if (!ReturnCode.isSuccess(returnCode)) {
-          throw Exception('Error executing ffmpeg command');
+          print('FFmpeg command failed with result: $returnCode');
+          throw Exception(
+              'Error executing FFmpeg command for scene ${scene.sceneNumber}');
         }
       }
 
@@ -60,6 +79,7 @@ class VideoService {
       await concatFile.writeAsString(concatContent);
 
       final concatCommand = [
+        '-y',
         '-f',
         'concat',
         '-safe',
@@ -68,12 +88,16 @@ class VideoService {
         concatFilePath,
         '-c:v',
         'libx264',
+        '-pix_fmt',
+        'yuv420p',
         '-c:a',
         'aac',
         '-b:a',
         '192k',
         outputVideoPath
       ];
+
+      print('Executing FFmpeg concat command: $concatCommand');
 
       var concatSession = await FFmpegKit.execute(concatCommand.join(' '));
       var concatReturnCode = await concatSession.getReturnCode();
@@ -100,6 +124,8 @@ class VideoService {
           'aac',
           finalOutputPath
         ];
+
+        print('Executing FFmpeg mix command: $mixCommand');
 
         var mixSession = await FFmpegKit.execute(mixCommand.join(' '));
         var mixReturnCode = await mixSession.getReturnCode();

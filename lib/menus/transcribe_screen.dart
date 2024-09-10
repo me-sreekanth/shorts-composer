@@ -106,9 +106,11 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     final String backColor = "&H0000FFFF"; // Semi-transparent yellow background
     final String outlineColor = "&H00000000"; // Black outline
     final int outlineThickness = 2; // Thin outline to simulate border
-    final int shadowThickness = 5; // Shadow to simulate curved edges
-    final int alignment = 5; // Centered
+    final int shadowThickness = 2; // Shadow to simulate curved edges
+    final int alignment = 2; // Bottom-center
     final int bold = -1; // -1 means bold text
+    final int verticalMargin =
+        100; // Adjust this to position slightly below the center
 
     // Write [Script Info] section
     sink.writeln('[Script Info]');
@@ -124,23 +126,16 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
         'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding');
 
     sink.writeln(
-        'Style: Default,$fontName,$fontSize,$primaryColor,$primaryColor,$outlineColor,$backColor,$bold,0,0,0,100,100,0,0,3,$outlineThickness,$shadowThickness,$alignment,10,10,10,1');
-    // - `BorderStyle=3` ensures the text will have a box background (instead of only the text outline)
-    // - Font: $fontName
-    // - Font size: $fontSize
-    // - Primary color (text): $primaryColor
-    // - Outline color: $outlineColor
-    // - Background color: $backColor (semi-transparent yellow)
-    // - Outline thickness: $outlineThickness (thin outline for border)
-    // - Shadow thickness: $shadowThickness (creates depth for a pseudo-curved effect)
-    // - Bold: Enabled with `$bold`
+        'Style: Default,$fontName,$fontSize,$primaryColor,$primaryColor,$outlineColor,$backColor,$bold,0,0,0,100,100,0,0,3,$outlineThickness,$shadowThickness,$alignment,10,10,$verticalMargin,1');
+    // - `Alignment=2` ensures the text is horizontally centered below the centerline.
+    // - `MarginV=$verticalMargin` controls the vertical distance from the middle of the screen.
 
     // Write [Events] section
     sink.writeln('[Events]');
     sink.writeln(
         'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text');
 
-    // Write each word as a dialogue with center alignment (\an5)
+    // Write each word as a dialogue with center alignment just below the center
     for (var word in jsonMap['words']) {
       String start = _formatTime(word['start']);
       String end = _formatTime(word['end']);
@@ -148,8 +143,9 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
       // Convert each word to uppercase
       String text = word['word'].replaceAll('\n', ' ').toUpperCase();
 
-      // Add \an5 to center the text on the screen
-      sink.writeln('Dialogue: 0,${start},${end},Default,,0,0,0,,{\an5}${text}');
+      // Add \an2 to center the text horizontally, below the centerline
+      sink.writeln(
+          'Dialogue: 0,${start},${end},Default,,0,0,${verticalMargin},,{\an2}${text}');
     }
 
     await sink.close();

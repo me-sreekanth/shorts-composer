@@ -16,10 +16,9 @@ class PreviewScreen extends StatefulWidget {
 }
 
 class _PreviewScreenState extends State<PreviewScreen> {
-  VideoPlayerController? _controller; // Make the controller nullable
-  Future<void>? _initializeVideoPlayerFuture; // This will be initialized later
+  VideoPlayerController? _controller;
+  Future<void>? _initializeVideoPlayerFuture;
   bool _isPlaying = false;
-  bool _isFFmpegComplete = false; // Flag for FFmpeg completion
 
   @override
   void initState() {
@@ -34,18 +33,12 @@ class _PreviewScreenState extends State<PreviewScreen> {
     if (widget.assFilePath != null) {
       // Apply .ass subtitles to the video
       final List<String> subtitleCommand = [
-        '-i',
-        widget.videoPath,
-        '-vf',
-        'ass=${widget.assFilePath}',
-        '-c:v',
-        'libx264', // Re-encode the video with subtitles
-        '-c:a',
-        'aac', // Ensure audio is encoded
-        '-b:a',
-        '192k', // Audio bitrate
-        '-y', // Overwrite the output file if exists
-        subtitleOutputPath
+        '-i', widget.videoPath,
+        '-vf', 'ass=${widget.assFilePath}',
+        '-c:v', 'libx264', // Re-encode the video with subtitles
+        '-c:a', 'aac', // Ensure audio is encoded
+        '-b:a', '192k', // Audio bitrate
+        '-y', subtitleOutputPath
       ];
 
       print('Executing FFmpeg subtitle command: $subtitleCommand');
@@ -53,14 +46,8 @@ class _PreviewScreenState extends State<PreviewScreen> {
       var session = await FFmpegKit.execute(subtitleCommand.join(' '));
       var returnCode = await session.getReturnCode();
       if (ReturnCode.isSuccess(returnCode)) {
-        print('FFmpeg subtitle command succeeded.');
         _controller = VideoPlayerController.file(File(subtitleOutputPath));
       } else {
-        var failStackTrace = await session.getFailStackTrace();
-        var output = await session.getOutput();
-        print('FFmpeg subtitle command failed with result: $returnCode');
-        print('Fail Stack Trace: $failStackTrace');
-        print('Output: $output');
         _controller = VideoPlayerController.file(File(widget.videoPath));
       }
     } else {
@@ -70,7 +57,6 @@ class _PreviewScreenState extends State<PreviewScreen> {
     // Initialize the video player once FFmpeg has finished
     setState(() {
       _initializeVideoPlayerFuture = _controller!.initialize();
-      _isFFmpegComplete = true;
     });
   }
 
@@ -91,44 +77,33 @@ class _PreviewScreenState extends State<PreviewScreen> {
     });
   }
 
-  void _replay() {
-    _controller!.seekTo(Duration.zero);
-    _controller!.play();
-    setState(() {
-      _isPlaying = true;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          if (!_isFFmpegComplete || _initializeVideoPlayerFuture == null)
-            Center(child: CircularProgressIndicator())
-          else
-            FutureBuilder(
-              future: _initializeVideoPlayerFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  return GestureDetector(
-                    onTap: _togglePlayPause,
-                    child: SizedBox.expand(
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _controller?.value.size.width ?? 0,
-                          height: _controller?.value.size.height ?? 0,
-                          child: VideoPlayer(_controller!),
-                        ),
+          FutureBuilder(
+            future: _initializeVideoPlayerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return GestureDetector(
+                  onTap: _togglePlayPause,
+                  child: SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _controller?.value.size.width ?? 0,
+                        height: _controller?.value.size.height ?? 0,
+                        child: VideoPlayer(_controller!),
                       ),
                     ),
-                  );
-                } else {
-                  return Center(child: CircularProgressIndicator());
-                }
-              },
-            ),
+                  ),
+                );
+              } else {
+                return Center(child: CircularProgressIndicator());
+              }
+            },
+          ),
           Positioned(
             bottom: 50,
             left: 0,
@@ -157,7 +132,13 @@ class _PreviewScreenState extends State<PreviewScreen> {
                     ),
                     IconButton(
                       icon: Icon(Icons.replay, color: Colors.white),
-                      onPressed: _replay,
+                      onPressed: () {
+                        _controller!.seekTo(Duration.zero);
+                        _controller!.play();
+                        setState(() {
+                          _isPlaying = true;
+                        });
+                      },
                     ),
                   ],
                 ),
