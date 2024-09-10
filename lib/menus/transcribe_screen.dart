@@ -99,6 +99,17 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     final File assFile = File(assFilePath);
     IOSink sink = assFile.openWrite();
 
+    // Customizable variables
+    final String fontName = "Verdana";
+    final int fontSize = 16;
+    final String primaryColor = "&H00FFFFFF"; // White text
+    final String backColor = "&H0000FFFF"; // Semi-transparent yellow background
+    final String outlineColor = "&H00000000"; // Black outline
+    final int outlineThickness = 2; // Thin outline to simulate border
+    final int shadowThickness = 5; // Shadow to simulate curved edges
+    final int alignment = 5; // Centered
+    final int bold = -1; // -1 means bold text
+
     // Write [Script Info] section
     sink.writeln('[Script Info]');
     sink.writeln('Title: Transcription');
@@ -107,23 +118,22 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     sink.writeln('PlayDepth: 0');
     sink.writeln('Timer: 100.0000');
 
-    // Write [V4+ Styles] section with red background, curved border, and centered text
+    // Write [V4+ Styles] section using customizable variables with `BorderStyle` 3 to create a background box
     sink.writeln('[V4+ Styles]');
     sink.writeln(
         'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding');
 
-    // Updated Style to create red background and capitalized words
     sink.writeln(
-        'Style: Default,Arial,24,&H00FFFFFF,&H00FFFFFF,&H00000000,&HFF0000FF,0,0,0,0,100,100,0,0,3,3,2,5,10,10,10,1');
-    // Style attributes:
-    // - `Fontsize`: 24 for a larger subtitle size
-    // - `PrimaryColour`: White text (`&H00FFFFFF`)
-    // - `OutlineColour`: Black outline (`&H00000000`)
-    // - `BackColour`: Red background (`&HFF0000FF`)
-    // - `BorderStyle`: 3 (creates a box around the text)
-    // - `Outline`: 3 (thick enough to be visible and act as a border)
-    // - `Shadow`: 2 (optional shadow for effect)
-    // - `Alignment`: 5 (centered both horizontally and vertically)
+        'Style: Default,$fontName,$fontSize,$primaryColor,$primaryColor,$outlineColor,$backColor,$bold,0,0,0,100,100,0,0,3,$outlineThickness,$shadowThickness,$alignment,10,10,10,1');
+    // - `BorderStyle=3` ensures the text will have a box background (instead of only the text outline)
+    // - Font: $fontName
+    // - Font size: $fontSize
+    // - Primary color (text): $primaryColor
+    // - Outline color: $outlineColor
+    // - Background color: $backColor (semi-transparent yellow)
+    // - Outline thickness: $outlineThickness (thin outline for border)
+    // - Shadow thickness: $shadowThickness (creates depth for a pseudo-curved effect)
+    // - Bold: Enabled with `$bold`
 
     // Write [Events] section
     sink.writeln('[Events]');
