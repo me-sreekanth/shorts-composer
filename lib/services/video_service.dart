@@ -8,6 +8,7 @@ import 'package:shorts_composer/models/scene.dart';
 class VideoService {
   String? backgroundMusicPath;
   String? subtitlesPath;
+  String? watermarkPath; // Add a watermarkPath for the selected watermark
 
   Future<String?> createVideo(List<Scene> scenes) async {
     try {
@@ -32,43 +33,51 @@ class VideoService {
         final selectedEffect = effects[random.nextInt(effects.length)]
             .replaceAll("{duration}", (scene.duration * 25).toString());
 
-        // FFmpeg command to generate video clips with voiceover and animation
+        // Watermark handling
+        String watermarkFilter = '';
+        if (watermarkPath != null) {
+          // Scale the watermark to 150% of its original size and maintain aspect ratio, apply top/left margins
+          watermarkFilter =
+              "[2:v]scale=iw*1.5:-1[wm];[bg][wm]overlay=160:160"; // Left margin: 30, Top margin: 20
+        }
+
+        print("Watermark path: $watermarkPath");
+
+        // FFmpeg command to generate video clips with voiceover, animation, and watermark
         final ffmpegCommand = [
           '-y',
-          '-loop',
-          '1',
-          '-i',
-          imagePath,
-          '-i',
-          audioPath,
-          '-vf',
-          selectedEffect,
-          '-c:v',
-          'libx264',
-          '-pix_fmt',
-          'yuv420p',
-          '-c:a',
-          'aac',
-          '-b:a',
-          '192k',
-          '-shortest',
-          '-t',
-          scene.duration.toString(),
+          '-loop', '1', // Loop the image
+          '-i', imagePath, // Input image (scene)
+          '-i', audioPath, // Input audio (voiceover)
+          '-i', watermarkPath, // Input watermark image
+          '-filter_complex',
+          "[0:v]$selectedEffect[bg];" +
+              watermarkFilter, // Overlay watermark with specified margins
+          '-c:v', 'libx264', // Video codec
+          '-pix_fmt', 'yuv420p', // Pixel format
+          '-c:a', 'aac', // Audio codec
+          '-b:a', '192k', // Audio bitrate
+          '-shortest', // Stops at the shortest stream (audio or video)
+          '-t', scene.duration.toString(), // Set video duration
           outputPath
         ];
 
         print(
             'Executing FFmpeg command for scene ${scene.sceneNumber}: $ffmpegCommand');
 
+        // Execute FFmpeg command
         var session = await FFmpegKit.execute(ffmpegCommand.join(' '));
         var returnCode = await session.getReturnCode();
-        if (!ReturnCode.isSuccess(returnCode)) {
+
+        // Check the result of the command
+        if (ReturnCode.isSuccess(returnCode)) {
+          print('FFmpeg command succeeded.');
+        } else {
           print('FFmpeg command failed with result: $returnCode');
           throw Exception(
               'Error executing FFmpeg command for scene ${scene.sceneNumber}');
         }
       }
-
       // Concatenate the clips into a single video
       final concatFilePath = '$tempDir/concat.txt';
       final outputVideoPath = '$tempDir/final_video.mp4';

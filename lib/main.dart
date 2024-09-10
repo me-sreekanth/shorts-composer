@@ -248,7 +248,9 @@ class _AppBodyState extends State<AppBody> {
           },
         );
       case 3:
-        return const WatermarksScreen();
+        return WatermarksScreen(
+          videoService: _videoService, // Pass the VideoService instance
+        );
       case 4:
         return UploadScreen(
           initialTitle: _videoTitle,
