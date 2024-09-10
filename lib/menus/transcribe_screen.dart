@@ -107,12 +107,23 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     sink.writeln('PlayDepth: 0');
     sink.writeln('Timer: 100.0000');
 
-    // Write [V4+ Styles] section with Alignment = 5 (centered both horizontally and vertically)
+    // Write [V4+ Styles] section with red background, curved border, and centered text
     sink.writeln('[V4+ Styles]');
     sink.writeln(
         'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding');
+
+    // Updated Style to create red background and capitalized words
     sink.writeln(
-        'Style: Default,Arial,20,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,1,0,5,10,10,10,1'); // Alignment = 5 for centering
+        'Style: Default,Arial,24,&H00FFFFFF,&H00FFFFFF,&H00000000,&HFF0000FF,0,0,0,0,100,100,0,0,3,3,2,5,10,10,10,1');
+    // Style attributes:
+    // - `Fontsize`: 24 for a larger subtitle size
+    // - `PrimaryColour`: White text (`&H00FFFFFF`)
+    // - `OutlineColour`: Black outline (`&H00000000`)
+    // - `BackColour`: Red background (`&HFF0000FF`)
+    // - `BorderStyle`: 3 (creates a box around the text)
+    // - `Outline`: 3 (thick enough to be visible and act as a border)
+    // - `Shadow`: 2 (optional shadow for effect)
+    // - `Alignment`: 5 (centered both horizontally and vertically)
 
     // Write [Events] section
     sink.writeln('[Events]');
@@ -123,7 +134,9 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     for (var word in jsonMap['words']) {
       String start = _formatTime(word['start']);
       String end = _formatTime(word['end']);
-      String text = word['word'].replaceAll('\n', ' ');
+
+      // Convert each word to uppercase
+      String text = word['word'].replaceAll('\n', ' ').toUpperCase();
 
       // Add \an5 to center the text on the screen
       sink.writeln('Dialogue: 0,${start},${end},Default,,0,0,0,,{\an5}${text}');
