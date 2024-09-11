@@ -67,3 +67,42 @@ Not working
 
 3
 "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920"
+
+
+Optimising the Video processing time
+
+1. Hardware acceleration
+  final ffmpegCommand = [
+          '-y',
+          '-hwaccel', 'auto', // Enable hardware acceleration
+          '-i', imagePath,
+          '-i', audioPath,
+          '-i', watermarkPath,
+          '-filter_complex',
+          "[0:v]$selectedEffect[bg];" + watermarkFilter,
+          '-c:v', 'libx264',
+          '-pix_fmt', 'yuv420p',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-shortest',
+          '-t', scene.duration.toString(),
+          outputPath,
+        ];
+
+2. Reduce the size of the generating video
+
+final List<String> effects = [
+  "zoompan=z='zoom+0.0015':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=720x1280",
+];
+
+3. Lowering bit rate
+
+'-b:v', '1000k',  // Lower video bitrate for faster processing
+
+4. Parallel processing
+
+await Future.wait(scenes.map((scene) async {
+  await generateSceneVideo(scene);
+}));
+
+
