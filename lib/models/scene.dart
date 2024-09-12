@@ -7,7 +7,7 @@ class Scene {
   bool isLocalImage;
   String? voiceoverUrl;
   bool isLocalVoiceover;
-  String? videoPath; // Add this field
+  String? videoPath; // Field to store video path
 
   Scene({
     required this.sceneNumber,
@@ -18,7 +18,7 @@ class Scene {
     this.isLocalImage = false,
     this.voiceoverUrl,
     this.isLocalVoiceover = false,
-    this.videoPath, // Initialize this field
+    this.videoPath,
   });
 
   factory Scene.fromJson(Map<String, dynamic> json) {
@@ -35,7 +35,7 @@ class Scene {
       isLocalImage: json['IsLocalImage'] ?? false,
       voiceoverUrl: json['VoiceoverUrl'],
       isLocalVoiceover: json['IsLocalVoiceover'] ?? false,
-      videoPath: json['VideoPath'], // Add this line
+      videoPath: json['VideoPath'], // Handle the video path
     );
   }
 
@@ -55,5 +55,20 @@ class Scene {
 
   void updateVideoPath(String newVideoPath) {
     videoPath = newVideoPath;
+  }
+
+  // Add a toJson method for reverse serialization if needed
+  Map<String, dynamic> toJson() {
+    return {
+      'SceneNumber': sceneNumber,
+      'Duration': duration,
+      'Text': text,
+      'Description': description,
+      'ImageUrl': imageUrl,
+      'IsLocalImage': isLocalImage,
+      'VoiceoverUrl': voiceoverUrl,
+      'IsLocalVoiceover': isLocalVoiceover,
+      'VideoPath': videoPath,
+    };
   }
 }

@@ -1,18 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:sprintf/sprintf.dart';
+import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 class TranscribeScreen extends StatefulWidget {
   final Function(String) onMusicSelected;
   final Function(String) onAssFileSelected;
+  final String? backgroundMusicFileName;
+  final String? assFileName;
 
   const TranscribeScreen({
     required this.onMusicSelected,
     required this.onAssFileSelected,
+    this.backgroundMusicFileName,
+    this.assFileName,
     Key? key,
   }) : super(key: key);
 
@@ -21,10 +25,16 @@ class TranscribeScreen extends StatefulWidget {
 }
 
 class _TranscribeScreenState extends State<TranscribeScreen> {
-  String? _backgroundMusicPath;
-  String? _assFilePath;
-  bool _isPlaying = false;
+  String? _backgroundMusicFileName;
+  String? _assFileName;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _backgroundMusicFileName = widget.backgroundMusicFileName;
+    _assFileName = widget.assFileName;
+  }
 
   void _pickBackgroundMusic() async {
     setState(() {
@@ -36,12 +46,15 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
       allowedExtensions: ['mp3'],
     );
 
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _backgroundMusicFileName = p.basename(result.files.single.path!);
+        widget.onMusicSelected(result.files.single.path!);
+      });
+    }
+
     setState(() {
       _isLoading = false;
-      if (result != null && result.files.single.path != null) {
-        _backgroundMusicPath = result.files.single.path;
-        widget.onMusicSelected(_backgroundMusicPath!);
-      }
     });
   }
 
@@ -55,12 +68,15 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
       allowedExtensions: ['ass'],
     );
 
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _assFileName = p.basename(result.files.single.path!);
+        widget.onAssFileSelected(result.files.single.path!);
+      });
+    }
+
     setState(() {
       _isLoading = false;
-      if (result != null && result.files.single.path != null) {
-        _assFilePath = result.files.single.path;
-        widget.onAssFileSelected(_assFilePath!);
-      }
     });
   }
 
@@ -76,8 +92,8 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
         Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         String assFilePath = await _createAssFileFromJson(jsonMap);
         setState(() {
-          _assFilePath = assFilePath;
-          widget.onAssFileSelected(_assFilePath!);
+          _assFileName = p.basename(assFilePath);
+          widget.onAssFileSelected(assFilePath);
         });
       } else {
         _showError('Transcription JSON content is empty.');
@@ -145,7 +161,7 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
 
       // Add \an2 to center the text horizontally, below the centerline
       sink.writeln(
-          'Dialogue: 0,${start},${end},Default,,0,0,${verticalMargin},,{\an2}${text}');
+          'Dialogue: 0,${start},${end},Default,,0,0,$verticalMargin,,{\an2}${text}');
     }
 
     await sink.close();
@@ -159,8 +175,7 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     int seconds = (time % 60).toInt();
     int milliseconds = ((time % 1) * 100).toInt();
 
-    return sprintf(
-        '%01d:%02d:%02d.%02d', [hours, minutes, seconds, milliseconds]);
+    return '${hours.toString().padLeft(1, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${milliseconds.toString().padLeft(2, '0')}';
   }
 
   void _showError(String message) {
@@ -178,9 +193,9 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (_backgroundMusicPath != null)
-              Text('Selected background music: $_backgroundMusicPath'),
-            if (_assFilePath != null) Text('Selected ASS file: $_assFilePath'),
+            if (_backgroundMusicFileName != null)
+              Text('Selected background music: $_backgroundMusicFileName'),
+            if (_assFileName != null) Text('Selected ASS file: $_assFileName'),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _pickBackgroundMusic,

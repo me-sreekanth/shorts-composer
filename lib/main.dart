@@ -11,6 +11,7 @@ import 'package:shorts_composer/menus/voiceovers_screen.dart';
 import 'package:shorts_composer/menus/transcribe_screen.dart';
 import 'package:shorts_composer/menus/watermarks_screen.dart';
 import 'package:shorts_composer/menus/upload_screen.dart';
+import 'package:path/path.dart' as p;
 
 void main() {
   runApp(App());
@@ -40,11 +41,11 @@ class _AppBodyState extends State<AppBody> {
 
   int _selectedIndex = 0;
   List<Scene> _scenes = [];
-  String _videoTitle = '';
-  String _videoDescription = '';
-  bool _isLoading = false;
-  String _loadingText = 'Generating video...';
   String? _assFilePath;
+  String? _backgroundMusicPath;
+  String _videoTitle = ''; // Add video title
+  String _videoDescription = ''; // Add video description
+  bool _isLoading = false;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -64,13 +65,6 @@ class _AppBodyState extends State<AppBody> {
     });
   }
 
-  void _onVoiceoverSelected(int index, String voiceoverUrl,
-      {bool isLocal = false}) {
-    setState(() {
-      _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
-    });
-  }
-
   Future<void> _onGenerateImage(int index) async {
     final scene = _scenes[index];
     final processId =
@@ -83,6 +77,12 @@ class _AppBodyState extends State<AppBody> {
         _onImageSelected(index, localImagePath, isLocal: true);
       }
     }
+  }
+
+  void _onMusicSelected(String path) {
+    setState(() {
+      _backgroundMusicPath = path;
+    });
   }
 
   Future<void> _uploadJson() async {
@@ -147,7 +147,6 @@ class _AppBodyState extends State<AppBody> {
     try {
       final outputPath = await _videoService.createVideo(_scenes);
       if (outputPath != null) {
-        Navigator.of(context).pop(); // Close the dialog
         setState(() {
           _isLoading = false;
         });
@@ -160,14 +159,12 @@ class _AppBodyState extends State<AppBody> {
         );
       } else {
         _showError('Failed to create video.');
-        Navigator.of(context).pop(); // Close the dialog
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
       _showError('Error creating video: $e');
-      Navigator.of(context).pop(); // Close the dialog
       setState(() {
         _isLoading = false;
       });
@@ -180,41 +177,12 @@ class _AppBodyState extends State<AppBody> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10.0)),
-          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
-                strokeWidth: 6.0,
-              ),
+              CircularProgressIndicator(),
               SizedBox(height: 20),
-              Text(
-                _loadingText,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Please wait while we process your video.',
-                style: TextStyle(
-                  fontSize: 16,
-                ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _isLoading = false;
-                  });
-                },
-                child: Text('Cancel'),
-              ),
+              Text('Generating video... Please wait.'),
             ],
           ),
         );
@@ -228,15 +196,18 @@ class _AppBodyState extends State<AppBody> {
         return ScenesScreen(
           scenes: _scenes,
           onDescriptionChanged: _onDescriptionChanged,
-          onImageSelected: (index, path, {isLocal = false}) =>
-              _onImageSelected(index, path, isLocal: isLocal),
+          onImageSelected: _onImageSelected,
           onGenerateImage: _onGenerateImage,
         );
       case 1:
         return VoiceoversScreen(
           scenes: _scenes,
           apiService: _apiService,
-          onVoiceoverSelected: _onVoiceoverSelected,
+          onVoiceoverSelected: (index, voiceoverUrl, {isLocal = false}) {
+            setState(() {
+              _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
+            });
+          },
         );
       case 2:
         return TranscribeScreen(
@@ -246,10 +217,14 @@ class _AppBodyState extends State<AppBody> {
               _assFilePath = path;
             });
           },
+          backgroundMusicFileName: _backgroundMusicPath != null
+              ? p.basename(_backgroundMusicPath!)
+              : null,
+          assFileName: _assFilePath != null ? p.basename(_assFilePath!) : null,
         );
       case 3:
         return WatermarksScreen(
-          videoService: _videoService, // Pass the VideoService instance
+          videoService: _videoService,
         );
       case 4:
         return UploadScreen(
@@ -257,14 +232,8 @@ class _AppBodyState extends State<AppBody> {
           initialDescription: _videoDescription,
         );
       default:
-        return Text("$index screen");
+        return Center(child: Text("Invalid selection."));
     }
-  }
-
-  void _onMusicSelected(String path) {
-    setState(() {
-      _videoService.backgroundMusicPath = path;
-    });
   }
 
   @override
