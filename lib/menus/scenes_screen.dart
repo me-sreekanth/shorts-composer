@@ -24,7 +24,7 @@ class _ScenesScreenState extends State<ScenesScreen> {
   bool _isLoading = false;
   int _loadingIndex = -1;
 
-  // Function to pick an image from gallery
+  // Function to pick an image from the gallery
   void _pickImage(int index) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -48,7 +48,7 @@ class _ScenesScreenState extends State<ScenesScreen> {
     });
   }
 
-  // Add a new empty scene to the list
+  // Function to add a new empty scene to the list
   void _addNewScene() {
     setState(() {
       final newSceneNumber = widget.scenes.length + 1;
@@ -63,6 +63,13 @@ class _ScenesScreenState extends State<ScenesScreen> {
     });
   }
 
+  // Function to delete a scene
+  void _deleteScene(int index) {
+    setState(() {
+      widget.scenes.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -74,14 +81,26 @@ class _ScenesScreenState extends State<ScenesScreen> {
               final scene = widget.scenes[index];
               return Card(
                 child: ListTile(
-                  title: TextField(
-                    onChanged: (newDescription) =>
-                        widget.onDescriptionChanged(index, newDescription),
-                    decoration: InputDecoration(
-                      hintText: 'Enter description',
-                      labelText: 'Description',
-                    ),
-                    controller: TextEditingController(text: scene.description),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          onChanged: (newDescription) => widget
+                              .onDescriptionChanged(index, newDescription),
+                          decoration: InputDecoration(
+                            hintText: 'Enter description',
+                            labelText: 'Description',
+                          ),
+                          controller:
+                              TextEditingController(text: scene.description),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        color: Colors.red,
+                        onPressed: () => _deleteScene(index),
+                      ),
+                    ],
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
