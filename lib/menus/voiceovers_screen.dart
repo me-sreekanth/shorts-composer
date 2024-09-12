@@ -28,8 +28,25 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   @override
   void initState() {
     super.initState();
-    _audioPlayers.addAll(widget.scenes.map((_) => AudioPlayer()));
-    _isPlaying.addAll(widget.scenes.map((_) => false));
+    _initializePlayers();
+  }
+
+  void _initializePlayers() {
+    _audioPlayers.clear();
+    _isPlaying.clear();
+
+    for (var i = 0; i < widget.scenes.length; i++) {
+      _audioPlayers.add(AudioPlayer());
+      _isPlaying.add(false);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant VoiceoversScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scenes.length != widget.scenes.length) {
+      _initializePlayers();
+    }
   }
 
   @override

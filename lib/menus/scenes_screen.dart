@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shorts_composer/models/scene.dart';
@@ -25,6 +24,7 @@ class _ScenesScreenState extends State<ScenesScreen> {
   bool _isLoading = false;
   int _loadingIndex = -1;
 
+  // Function to pick an image from gallery
   void _pickImage(int index) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -33,6 +33,7 @@ class _ScenesScreenState extends State<ScenesScreen> {
     }
   }
 
+  // Function to generate an image for a scene
   Future<void> _generateImage(int index) async {
     setState(() {
       _isLoading = true;
@@ -47,59 +48,85 @@ class _ScenesScreenState extends State<ScenesScreen> {
     });
   }
 
+  // Add a new empty scene to the list
+  void _addNewScene() {
+    setState(() {
+      final newSceneNumber = widget.scenes.length + 1;
+      widget.scenes.add(
+        Scene(
+          sceneNumber: newSceneNumber,
+          duration: 5, // Default duration (can be modified by the user)
+          text: '', // Empty text initially
+          description: '', // Empty description initially
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: widget.scenes.length,
-      itemBuilder: (context, index) {
-        final scene = widget.scenes[index];
-        return Card(
-          child: ListTile(
-            title: TextField(
-              onChanged: (newDescription) =>
-                  widget.onDescriptionChanged(index, newDescription),
-              decoration: InputDecoration(
-                hintText: 'Enter description',
-                labelText: 'Description',
-              ),
-              controller: TextEditingController(text: scene.description),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (scene.imageUrl != null)
-                  Image.file(
-                    File(scene.imageUrl!),
-                    height: 100,
-                    width: 100,
-                  )
-                else
-                  Container(
-                    height: 100,
-                    width: 100,
-                    color: Colors.grey,
-                    child: Center(child: Text('No Image')),
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: widget.scenes.length,
+            itemBuilder: (context, index) {
+              final scene = widget.scenes[index];
+              return Card(
+                child: ListTile(
+                  title: TextField(
+                    onChanged: (newDescription) =>
+                        widget.onDescriptionChanged(index, newDescription),
+                    decoration: InputDecoration(
+                      hintText: 'Enter description',
+                      labelText: 'Description',
+                    ),
+                    controller: TextEditingController(text: scene.description),
                   ),
-                Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => _pickImage(index),
-                      child: Text('Pick'),
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () => _generateImage(index),
-                      child: Text('Generate'),
-                    ),
-                  ],
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (scene.imageUrl != null)
+                        Image.file(
+                          File(scene.imageUrl!),
+                          height: 100,
+                          width: 100,
+                        )
+                      else
+                        Container(
+                          height: 100,
+                          width: 100,
+                          color: Colors.grey,
+                          child: Center(child: Text('No Image')),
+                        ),
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () => _pickImage(index),
+                            child: Text('Pick'),
+                          ),
+                          SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => _generateImage(index),
+                            child: Text('Generate'),
+                          ),
+                        ],
+                      ),
+                      if (_isLoading && _loadingIndex == index)
+                        LinearProgressIndicator(),
+                    ],
+                  ),
                 ),
-                if (_isLoading && _loadingIndex == index)
-                  LinearProgressIndicator(),
-              ],
-            ),
+              );
+            },
           ),
-        );
-      },
+        ),
+        ElevatedButton.icon(
+          onPressed: _addNewScene,
+          icon: Icon(Icons.add),
+          label: Text('Add New Scene'),
+        ),
+      ],
     );
   }
 }
