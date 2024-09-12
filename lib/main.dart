@@ -43,6 +43,7 @@ class _AppBodyState extends State<AppBody> {
   List<Scene> _scenes = [];
   String? _assFilePath;
   String? _backgroundMusicPath;
+  String? _watermarkFilePath; // Add a field to store the watermark path
   String _videoTitle = ''; // Add video title
   String _videoDescription = ''; // Add video description
   bool _isLoading = false;
@@ -82,6 +83,13 @@ class _AppBodyState extends State<AppBody> {
   void _onMusicSelected(String path) {
     setState(() {
       _backgroundMusicPath = path;
+    });
+  }
+
+  void _onWatermarkSelected(String path) {
+    setState(() {
+      _watermarkFilePath = path;
+      _videoService.watermarkPath = path;
     });
   }
 
@@ -225,6 +233,9 @@ class _AppBodyState extends State<AppBody> {
       case 3:
         return WatermarksScreen(
           videoService: _videoService,
+          watermarkFileName: _watermarkFilePath != null
+              ? p.basename(_watermarkFilePath!)
+              : null,
         );
       case 4:
         return UploadScreen(
