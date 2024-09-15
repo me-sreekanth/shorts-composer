@@ -43,41 +43,16 @@ class _AppBodyState extends State<AppBody> {
   List<Scene> _scenes = [];
   String? _assFilePath;
   String? _backgroundMusicPath;
-  String? _watermarkFilePath; // Add a field to store the watermark path
-  String _videoTitle = ''; // Add video title
-  String _videoDescription = ''; // Add video description
+  String? _watermarkFilePath;
+  String _videoTitle = '';
+  String _videoDescription = '';
   bool _isLoading = false;
+  bool _isCanceled = false; // Track if the video generation is canceled
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-  }
-
-  void _onDescriptionChanged(int index, String newDescription) {
-    setState(() {
-      _scenes[index].updateDescription(newDescription);
-    });
-  }
-
-  void _onImageSelected(int index, String imagePath, {bool isLocal = false}) {
-    setState(() {
-      _scenes[index].updateImageUrl(imagePath, isLocal: isLocal);
-    });
-  }
-
-  Future<void> _onGenerateImage(int index) async {
-    final scene = _scenes[index];
-    final processId =
-        await _apiService.generateImage(scene.description, scene.sceneNumber);
-    if (processId != null) {
-      final imageUrl = await _apiService.fetchStatus(processId);
-      if (imageUrl != null) {
-        final localImagePath =
-            await _apiService.downloadImage(imageUrl, scene.sceneNumber);
-        _onImageSelected(index, localImagePath, isLocal: true);
-      }
-    }
   }
 
   void _onMusicSelected(String path) {
@@ -90,16 +65,24 @@ class _AppBodyState extends State<AppBody> {
   Future<void> _createAndSaveVideo() async {
     setState(() {
       _isLoading = true;
+      _isCanceled = false; // Reset the cancellation flag
     });
+
+    _showLoadingDialog(); // Show the loading dialog
 
     try {
       print('Starting video generation...');
-      print('Background music path: $_backgroundMusicPath'); // Debugging
-      _videoService.backgroundMusicPath =
-          _backgroundMusicPath; // Ensure path is set
+      _videoService.backgroundMusicPath = _backgroundMusicPath;
 
-      final outputPath = await _videoService.createVideo(_scenes);
+      // Pass the scenes and _isCanceled flag to the createVideo method
+      final outputPath = await _videoService.createVideo(_scenes, _isCanceled);
+      if (_isCanceled) {
+        _showError('Video generation canceled.');
+        return;
+      }
       if (outputPath != null) {
+        Navigator.pop(
+            context); // Dismiss the AlertDialog when video generation is complete
         setState(() {
           _isLoading = false;
         });
@@ -124,65 +107,12 @@ class _AppBodyState extends State<AppBody> {
     }
   }
 
-  void _onWatermarkSelected(String path) {
+  void _cancelVideoGeneration() {
     setState(() {
-      _watermarkFilePath = path;
-      _videoService.watermarkPath = path;
+      _isCanceled = true;
+      Navigator.pop(
+          context); // Dismiss the loading dialog when cancel is pressed
     });
-  }
-
-  Future<void> _uploadJson() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
-
-      if (result != null) {
-        if (result.files.single.bytes != null) {
-          String jsonString = String.fromCharCodes(result.files.single.bytes!);
-          if (jsonString.isNotEmpty) {
-            Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-            _processJson(jsonMap);
-          } else {
-            _showError('File content is empty.');
-          }
-        } else if (result.files.single.path != null) {
-          File file = File(result.files.single.path!);
-          String jsonString = await file.readAsString();
-          if (jsonString.isNotEmpty) {
-            Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-            _processJson(jsonMap);
-          } else {
-            _showError('File content is empty.');
-          }
-        } else {
-          _showError('No valid file content.');
-        }
-      } else {
-        _showError('No file selected.');
-      }
-    } catch (e) {
-      _showError('An error occurred while uploading the JSON file.');
-      print(e);
-    }
-  }
-
-  void _processJson(Map<String, dynamic> jsonMap) {
-    List<Scene> scenes = (jsonMap['Scenes'] as List)
-        .map((scene) => Scene.fromJson(scene))
-        .toList();
-
-    setState(() {
-      _scenes = scenes;
-      _videoTitle = jsonMap['Title'];
-      _videoDescription = jsonMap['Description'];
-    });
-  }
-
-  void _showError(String message) {
-    final snackBar = SnackBar(content: Text(message));
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   void _showLoadingDialog() {
@@ -199,9 +129,20 @@ class _AppBodyState extends State<AppBody> {
               Text('Generating video... Please wait.'),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: _cancelVideoGeneration,
+              child: Text('Cancel'),
+            ),
+          ],
         );
       },
     );
+  }
+
+  void _showError(String message) {
+    final snackBar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   Widget _getScreenWidget(int index) {
@@ -209,9 +150,31 @@ class _AppBodyState extends State<AppBody> {
       case 0:
         return ScenesScreen(
           scenes: _scenes,
-          onDescriptionChanged: _onDescriptionChanged,
-          onImageSelected: _onImageSelected,
-          onGenerateImage: _onGenerateImage,
+          onDescriptionChanged: (index, newDescription) {
+            setState(() {
+              _scenes[index].updateDescription(newDescription);
+            });
+          },
+          onImageSelected: (index, imagePath, {isLocal = false}) {
+            setState(() {
+              _scenes[index].updateImageUrl(imagePath, isLocal: isLocal);
+            });
+          },
+          onGenerateImage: (index) async {
+            final scene = _scenes[index];
+            final processId = await _apiService.generateImage(
+                scene.description, scene.sceneNumber);
+            if (processId != null) {
+              final imageUrl = await _apiService.fetchStatus(processId);
+              if (imageUrl != null) {
+                final localImagePath = await _apiService.downloadImage(
+                    imageUrl, scene.sceneNumber);
+                setState(() {
+                  _scenes[index].updateImageUrl(localImagePath, isLocal: true);
+                });
+              }
+            }
+          },
         );
       case 1:
         return VoiceoversScreen(
@@ -262,7 +225,6 @@ class _AppBodyState extends State<AppBody> {
           IconButton(
             icon: Icon(Icons.video_library),
             onPressed: () {
-              _showLoadingDialog();
               _createAndSaveVideo();
             },
           ),
@@ -300,5 +262,54 @@ class _AppBodyState extends State<AppBody> {
         child: Icon(Icons.upload_file),
       ),
     );
+  }
+
+  Future<void> _uploadJson() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result != null) {
+        if (result.files.single.bytes != null) {
+          String jsonString = String.fromCharCodes(result.files.single.bytes!);
+          if (jsonString.isNotEmpty) {
+            Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+            _processJson(jsonMap);
+          } else {
+            _showError('File content is empty.');
+          }
+        } else if (result.files.single.path != null) {
+          File file = File(result.files.single.path!);
+          String jsonString = await file.readAsString();
+          if (jsonString.isNotEmpty) {
+            Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+            _processJson(jsonMap);
+          } else {
+            _showError('File content is empty.');
+          }
+        } else {
+          _showError('No valid file content.');
+        }
+      } else {
+        _showError('No file selected.');
+      }
+    } catch (e) {
+      _showError('An error occurred while uploading the JSON file.');
+      print(e);
+    }
+  }
+
+  void _processJson(Map<String, dynamic> jsonMap) {
+    List<Scene> scenes = (jsonMap['Scenes'] as List)
+        .map((scene) => Scene.fromJson(scene))
+        .toList();
+
+    setState(() {
+      _scenes = scenes;
+      _videoTitle = jsonMap['Title'];
+      _videoDescription = jsonMap['Description'];
+    });
   }
 }

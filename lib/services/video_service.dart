@@ -39,7 +39,7 @@ class VideoService {
     }
   }
 
-  Future<String?> createVideo(List<Scene> scenes) async {
+  Future<String?> createVideo(List<Scene> scenes, bool isCanceled) async {
     try {
       final Directory directory = await getApplicationDocumentsDirectory();
       final String tempDir = directory.path;
@@ -53,6 +53,12 @@ class VideoService {
 
       // Prepare the commands to generate video clips from scenes
       for (var scene in scenes) {
+        // Check if the process has been canceled
+        if (isCanceled) {
+          print('Video generation canceled.');
+          return null;
+        }
+
         final imagePath = scene.imageUrl!;
         final audioPath = scene.voiceoverUrl!;
         final outputPath = '$tempDir/${scene.sceneNumber}-scene.mp4';
