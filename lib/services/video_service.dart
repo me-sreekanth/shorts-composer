@@ -49,7 +49,7 @@ class VideoService {
           '-loop', '1', // Loop the image
           '-i', imagePath, // Input image (scene)
           '-i', audioPath, // Input audio (voiceover)
-          '-i', watermarkPath, // Input watermark image
+          '-i', watermarkPath ?? 'null', // Input watermark image (optional)
           '-filter_complex',
           "[0:v]$selectedEffect[bg];" +
               watermarkFilter, // Overlay watermark with specified margins
@@ -117,20 +117,20 @@ class VideoService {
       // Mix background music with the concatenated video
       String finalVideoPath = outputVideoPath;
       if (backgroundMusicPath != null) {
+        print(
+            'Background music found: $backgroundMusicPath'); // Debugging statement
         final finalOutputPath = '$tempDir/final_video_with_music.mp4';
 
         final mixCommand = [
           '-y',
-          '-i',
-          outputVideoPath,
-          '-i',
-          backgroundMusicPath!,
+          '-i', outputVideoPath, // Input video with voiceover audio
+          '-i', backgroundMusicPath!, // Input background music
           '-filter_complex',
-          '[1]volume=0.2[a1];[0][a1]amix=inputs=2:duration=first:dropout_transition=2',
-          '-c:v',
-          'copy',
-          '-c:a',
-          'aac',
+          '[1:a]volume=1.0[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2',
+          '-map', '0:v', // Map video from the first input (outputVideoPath)
+          '-c:v', 'copy', // Copy video without re-encoding
+          '-c:a', 'aac', // Re-encode audio to AAC
+          '-shortest', // Set duration to the shortest input
           finalOutputPath
         ];
 
@@ -143,6 +143,8 @@ class VideoService {
         }
 
         finalVideoPath = finalOutputPath;
+      } else {
+        print('No background music selected.');
       }
 
       // Apply subtitles to the final video if available

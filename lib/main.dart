@@ -84,6 +84,44 @@ class _AppBodyState extends State<AppBody> {
     setState(() {
       _backgroundMusicPath = path;
     });
+    print('Background music selected: $_backgroundMusicPath'); // Debugging
+  }
+
+  Future<void> _createAndSaveVideo() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('Starting video generation...');
+      print('Background music path: $_backgroundMusicPath'); // Debugging
+      _videoService.backgroundMusicPath =
+          _backgroundMusicPath; // Ensure path is set
+
+      final outputPath = await _videoService.createVideo(_scenes);
+      if (outputPath != null) {
+        setState(() {
+          _isLoading = false;
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                PreviewScreen(videoPath: outputPath, assFilePath: _assFilePath),
+          ),
+        );
+      } else {
+        _showError('Failed to create video.');
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      _showError('Error creating video: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _onWatermarkSelected(String path) {
@@ -145,38 +183,6 @@ class _AppBodyState extends State<AppBody> {
   void _showError(String message) {
     final snackBar = SnackBar(content: Text(message));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  Future<void> _createAndSaveVideo() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final outputPath = await _videoService.createVideo(_scenes);
-      if (outputPath != null) {
-        setState(() {
-          _isLoading = false;
-        });
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                PreviewScreen(videoPath: outputPath, assFilePath: _assFilePath),
-          ),
-        );
-      } else {
-        _showError('Failed to create video.');
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      _showError('Error creating video: $e');
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   void _showLoadingDialog() {
