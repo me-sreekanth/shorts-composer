@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:math';
@@ -9,6 +12,32 @@ class VideoService {
   String? backgroundMusicPath;
   String? subtitlesPath;
   String? watermarkPath; // Add a watermarkPath for the selected watermark
+
+  bool _doesFileExist(String path) {
+    File file = File(path);
+    bool exists = file.existsSync();
+    if (!exists) {
+      print('File does not exist: $path');
+    } else {
+      print('File exists: $path');
+    }
+    return exists;
+  }
+
+// Simplified FFmpeg command to get the audio duration in raw format
+  Future<double> _getAudioDuration(String audioPath) async {
+    final audioPlayer = AudioPlayer();
+    try {
+      final duration = await audioPlayer.setFilePath(audioPath);
+      if (duration != null) {
+        return duration.inSeconds.toDouble();
+      } else {
+        throw Exception('Could not get audio duration.');
+      }
+    } finally {
+      await audioPlayer.dispose();
+    }
+  }
 
   Future<String?> createVideo(List<Scene> scenes) async {
     try {
@@ -29,19 +58,20 @@ class VideoService {
         final outputPath = '$tempDir/${scene.sceneNumber}-scene.mp4';
         scene.updateVideoPath(outputPath);
 
+        // Get the actual duration of the voiceover
+        double audioDuration = await _getAudioDuration(audioPath);
+        print(
+            'Voiceover duration for scene ${scene.sceneNumber}: $audioDuration');
+
         // Select a random effect for the scene
         final selectedEffect = effects[random.nextInt(effects.length)]
-            .replaceAll("{duration}", (scene.duration * 25).toString());
+            .replaceAll("{duration}", (audioDuration * 25).toString());
 
         // Watermark handling
         String watermarkFilter = '';
         if (watermarkPath != null) {
-          // Scale the watermark to 150% of its original size and maintain aspect ratio, apply top/left margins
-          watermarkFilter =
-              "[2:v]scale=iw*1.5:-1[wm];[bg][wm]overlay=160:160"; // Left margin: 30, Top margin: 20
+          watermarkFilter = "[2:v]scale=iw*1.5:-1[wm];[bg][wm]overlay=160:160";
         }
-
-        print("Watermark path: $watermarkPath");
 
         // FFmpeg command to generate video clips with voiceover, animation, and watermark
         final ffmpegCommand = [
@@ -58,7 +88,7 @@ class VideoService {
           '-c:a', 'aac', // Audio codec
           '-b:a', '192k', // Audio bitrate
           '-shortest', // Stops at the shortest stream (audio or video)
-          '-t', scene.duration.toString(), // Set video duration
+          '-t', audioDuration.toString(), // Set video duration to match audio
           outputPath
         ];
 
@@ -78,6 +108,7 @@ class VideoService {
               'Error executing FFmpeg command for scene ${scene.sceneNumber}');
         }
       }
+
       // Concatenate the clips into a single video
       final concatFilePath = '$tempDir/concat.txt';
       final outputVideoPath = '$tempDir/final_video.mp4';
@@ -117,8 +148,6 @@ class VideoService {
       // Mix background music with the concatenated video
       String finalVideoPath = outputVideoPath;
       if (backgroundMusicPath != null) {
-        print(
-            'Background music found: $backgroundMusicPath'); // Debugging statement
         final finalOutputPath = '$tempDir/final_video_with_music.mp4';
 
         final mixCommand = [
@@ -126,7 +155,7 @@ class VideoService {
           '-i', outputVideoPath, // Input video with voiceover audio
           '-i', backgroundMusicPath!, // Input background music
           '-filter_complex',
-          '[1:a]volume=1.0[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2',
+          '[1:a]volume=0.3[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2',
           '-map', '0:v', // Map video from the first input (outputVideoPath)
           '-c:v', 'copy', // Copy video without re-encoding
           '-c:a', 'aac', // Re-encode audio to AAC
@@ -143,8 +172,6 @@ class VideoService {
         }
 
         finalVideoPath = finalOutputPath;
-      } else {
-        print('No background music selected.');
       }
 
       // Apply subtitles to the final video if available
