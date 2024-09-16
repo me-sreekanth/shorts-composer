@@ -187,8 +187,8 @@ class VideoService {
 
         final subtitleCommand = [
           '-y',
-          '-i', finalVideoPath, // Input the final video with music
-          '-vf', 'ass=$subtitlesPath', // Apply the ASS subtitle filter
+          '-i', finalVideoPath,
+          '-vf', 'ass=$subtitlesPath',
           '-c:v', 'libx264', // Re-encoding to ensure subtitle filter works
           '-c:a', 'aac',
           '-b:a', '192k',
@@ -203,7 +203,7 @@ class VideoService {
 
         if (ReturnCode.isSuccess(subtitleReturnCode)) {
           print('FFmpeg subtitle command succeeded.');
-          return subtitleOutputPath; // Return the video with subtitles
+          return subtitleOutputPath;
         } else {
           print('FFmpeg subtitle command failed');
           throw Exception('Error applying subtitles');

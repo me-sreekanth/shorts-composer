@@ -4,6 +4,13 @@ import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
+import 'dart:io';
+import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PreviewScreen extends StatefulWidget {
   final String videoPath;
@@ -27,10 +34,8 @@ class _PreviewScreenState extends State<PreviewScreen> {
   }
 
   Future<void> _initializeVideoPlayer() async {
-    // Use the final video with subtitles
     _controller = VideoPlayerController.file(File(widget.videoPath));
 
-    // Initialize the video player once the file is loaded
     setState(() {
       _initializeVideoPlayerFuture = _controller!.initialize();
     });
@@ -53,9 +58,64 @@ class _PreviewScreenState extends State<PreviewScreen> {
     });
   }
 
+  Future<void> _saveVideoToGallery(String videoPath) async {
+    try {
+      if (Platform.isAndroid) {
+        PermissionStatus status = await Permission.storage.request();
+        if (!status.isGranted) {
+          print("Permission not granted for storage access");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Permission not granted for storage access')),
+          );
+          return;
+        }
+      } else if (Platform.isIOS) {
+        PermissionStatus status = await Permission.photosAddOnly.request();
+        if (!status.isGranted) {
+          print("Permission not granted for gallery access");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Permission not granted for gallery access')),
+          );
+          return;
+        }
+      }
+
+      // Use GallerySaver to save the video to the gallery
+      await GallerySaver.saveVideo(videoPath).then((bool? success) {
+        if (success != null && success) {
+          print('Video successfully saved to gallery');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Video saved to gallery')),
+          );
+        } else {
+          print('Failed to save video to gallery');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save video to gallery')),
+          );
+        }
+      });
+    } catch (e) {
+      print('Error saving video to gallery: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving video to gallery')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Preview Video'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.download),
+            onPressed: () => _saveVideoToGallery(widget.videoPath),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           FutureBuilder(

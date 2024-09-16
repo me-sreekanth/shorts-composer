@@ -21,7 +21,7 @@ dependencies:
   path_provider: ^2.0.2
   just_audio: ^0.9.18
   audioplayers: 6.1.0 
-  ffmpeg_kit_flutter_full_gpl: ^4.5.1
+  ffmpeg_kit_flutter_full_gpl: ^5.1.0
   video_player: ^2.4.2
   permission_handler: ^10.2.0
   gallery_saver: ^2.3.2
