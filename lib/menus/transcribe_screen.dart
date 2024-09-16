@@ -121,8 +121,8 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     final String primaryColor = "&H00FFFFFF"; // White text
     final String backColor = "&H0000FFFF"; // Semi-transparent yellow background
     final String outlineColor = "&H00000000"; // Black outline
-    final int outlineThickness = 2; // Thin outline to simulate border
-    final int shadowThickness = 2; // Shadow to simulate curved edges
+    final int outlineThickness = 20; // Thin outline to simulate border
+    final int shadowThickness = 20; // Shadow to simulate curved edges
     final int alignment = 2; // Bottom-center
     final int bold = -1; // -1 means bold text
     final int verticalMargin =
