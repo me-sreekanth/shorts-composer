@@ -26,6 +26,7 @@ dependencies:
   permission_handler: ^10.2.0
   gallery_saver: ^2.3.2
   sprintf: ^6.0.0
+  open_filex: ^4.2.0
 
 dev_dependencies:
   flutter_test:

@@ -1,16 +1,10 @@
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_player/video_player.dart';
-import 'dart:io';
-import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_player/video_player.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:video_player/video_player.dart';
 
 class PreviewScreen extends StatefulWidget {
   final String videoPath;
@@ -30,7 +24,21 @@ class _PreviewScreenState extends State<PreviewScreen> {
   @override
   void initState() {
     super.initState();
+    _requestPermissions(); // Ask for permissions when screen is loaded
     _initializeVideoPlayer();
+  }
+
+  // Request storage permissions for Android and gallery permission for iOS
+  Future<void> _requestPermissions() async {
+    if (Platform.isAndroid) {
+      if (await Permission.storage.isDenied) {
+        await Permission.storage.request();
+      }
+    } else if (Platform.isIOS) {
+      if (await Permission.photosAddOnly.isDenied) {
+        await Permission.photosAddOnly.request();
+      }
+    }
   }
 
   Future<void> _initializeVideoPlayer() async {
@@ -58,48 +66,43 @@ class _PreviewScreenState extends State<PreviewScreen> {
     });
   }
 
-  Future<void> _saveVideoToGallery(String videoPath) async {
+  Future<void> _saveVideoToDocuments(String videoPath) async {
     try {
+      Directory? directory;
+
       if (Platform.isAndroid) {
-        PermissionStatus status = await Permission.storage.request();
-        if (!status.isGranted) {
-          print("Permission not granted for storage access");
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Permission not granted for storage access')),
-          );
-          return;
-        }
+        directory =
+            await getExternalStorageDirectory(); // Android's external storage
       } else if (Platform.isIOS) {
-        PermissionStatus status = await Permission.photosAddOnly.request();
-        if (!status.isGranted) {
-          print("Permission not granted for gallery access");
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Permission not granted for gallery access')),
-          );
-          return;
-        }
+        directory =
+            await getApplicationDocumentsDirectory(); // iOS Documents directory
       }
 
-      // Use GallerySaver to save the video to the gallery
-      await GallerySaver.saveVideo(videoPath).then((bool? success) {
-        if (success != null && success) {
-          print('Video successfully saved to gallery');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Video saved to gallery')),
-          );
-        } else {
-          print('Failed to save video to gallery');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to save video to gallery')),
-          );
-        }
-      });
+      if (directory != null) {
+        String newFilePath = '${directory.path}/final_video_with_subs.mp4';
+        final File newFile = File(videoPath);
+        await newFile.copy(newFilePath);
+
+        print('Video successfully saved to Documents folder: $newFilePath');
+
+        // Open the video using the platform's default video player
+        OpenFilex.open(newFilePath).then((result) {
+          if (result.type != ResultType.done) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to open video file')),
+            );
+          }
+        });
+      } else {
+        print("Failed to access the directory.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to access the directory')),
+        );
+      }
     } catch (e) {
-      print('Error saving video to gallery: $e');
+      print('Error saving video to Documents: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving video to gallery')),
+        SnackBar(content: Text('Error saving video to Documents')),
       );
     }
   }
@@ -112,7 +115,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.download),
-            onPressed: () => _saveVideoToGallery(widget.videoPath),
+            onPressed: () => _saveVideoToDocuments(widget.videoPath),
           ),
         ],
       ),

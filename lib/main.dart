@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
 import 'package:shorts_composer/services/video_service.dart';
@@ -36,6 +37,30 @@ class AppBody extends StatefulWidget {
 }
 
 class _AppBodyState extends State<AppBody> {
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions(); // Request permissions when the app starts
+  }
+
+  Future<void> _requestPermissions() async {
+    // Request storage and camera permissions
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      await Permission.storage.request();
+    }
+
+    status = await Permission.photos.status;
+    if (!status.isGranted) {
+      await Permission.photos.request();
+    }
+
+    status = await Permission.camera.status;
+    if (!status.isGranted) {
+      await Permission.camera.request();
+    }
+  }
+
   final ApiService _apiService = ApiService();
   final VideoService _videoService = VideoService();
 
