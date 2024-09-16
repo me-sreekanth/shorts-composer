@@ -152,6 +152,7 @@ class VideoService {
       }
 
       // Mix background music with the concatenated video
+// Mix background music with the concatenated video
       String finalVideoPath = outputVideoPath;
       if (backgroundMusicPath != null) {
         final finalOutputPath = '$tempDir/final_video_with_music.mp4';
@@ -180,14 +181,14 @@ class VideoService {
         finalVideoPath = finalOutputPath;
       }
 
-      // Apply subtitles to the final video if available
+// Apply subtitles to the final video if available
       if (subtitlesPath != null) {
         final subtitleOutputPath = '$tempDir/final_video_with_subs.mp4';
 
         final subtitleCommand = [
           '-y',
-          '-i', finalVideoPath,
-          '-vf', 'ass=$subtitlesPath',
+          '-i', finalVideoPath, // Input the final video with music
+          '-vf', 'ass=$subtitlesPath', // Apply the ASS subtitle filter
           '-c:v', 'libx264', // Re-encoding to ensure subtitle filter works
           '-c:a', 'aac',
           '-b:a', '192k',
@@ -199,23 +200,17 @@ class VideoService {
         var subtitleSession =
             await FFmpegKit.execute(subtitleCommand.join(' '));
         var subtitleReturnCode = await subtitleSession.getReturnCode();
-        var failStackTrace = await subtitleSession.getFailStackTrace();
-        var output = await subtitleSession.getOutput();
 
         if (ReturnCode.isSuccess(subtitleReturnCode)) {
           print('FFmpeg subtitle command succeeded.');
-          print('Output: $output');
-          return subtitleOutputPath;
+          return subtitleOutputPath; // Return the video with subtitles
         } else {
-          print(
-              'FFmpeg subtitle command failed with result: $subtitleReturnCode');
-          print('Fail Stack Trace: $failStackTrace');
-          print('Output: $output');
+          print('FFmpeg subtitle command failed');
           throw Exception('Error applying subtitles');
         }
       }
 
-      return finalVideoPath;
+      return finalVideoPath; // In case subtitles were not applied, return the final video with music
     } catch (e) {
       print('Exception during video creation: $e');
       throw Exception('Error creating video: $e');

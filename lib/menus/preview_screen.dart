@@ -27,34 +27,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
   }
 
   Future<void> _initializeVideoPlayer() async {
-    final String tempDir = (await getApplicationDocumentsDirectory()).path;
-    final String subtitleOutputPath = '$tempDir/final_video_with_subs.mp4';
+    // Use the final video with subtitles
+    _controller = VideoPlayerController.file(File(widget.videoPath));
 
-    if (widget.assFilePath != null) {
-      // Apply .ass subtitles to the video
-      final List<String> subtitleCommand = [
-        '-i', widget.videoPath,
-        '-vf', 'ass=${widget.assFilePath}',
-        '-c:v', 'libx264', // Re-encode the video with subtitles
-        '-c:a', 'aac', // Ensure audio is encoded
-        '-b:a', '192k', // Audio bitrate
-        '-y', subtitleOutputPath
-      ];
-
-      print('Executing FFmpeg subtitle command: $subtitleCommand');
-
-      var session = await FFmpegKit.execute(subtitleCommand.join(' '));
-      var returnCode = await session.getReturnCode();
-      if (ReturnCode.isSuccess(returnCode)) {
-        _controller = VideoPlayerController.file(File(subtitleOutputPath));
-      } else {
-        _controller = VideoPlayerController.file(File(widget.videoPath));
-      }
-    } else {
-      _controller = VideoPlayerController.file(File(widget.videoPath));
-    }
-
-    // Initialize the video player once FFmpeg has finished
+    // Initialize the video player once the file is loaded
     setState(() {
       _initializeVideoPlayerFuture = _controller!.initialize();
     });

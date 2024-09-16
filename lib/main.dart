@@ -73,9 +73,13 @@ class _AppBodyState extends State<AppBody> {
     try {
       print('Starting video generation...');
       _videoService.backgroundMusicPath = _backgroundMusicPath;
+      _videoService.subtitlesPath = _assFilePath; // Set the subtitles path
 
       // Pass the scenes and _isCanceled flag to the createVideo method
       final outputPath = await _videoService.createVideo(_scenes, _isCanceled);
+      print(
+          'Output path generated: $outputPath'); // This should log the path to `final_video_with_subs.mp4`
+
       if (_isCanceled) {
         _showError('Video generation canceled.');
         return;
@@ -86,11 +90,13 @@ class _AppBodyState extends State<AppBody> {
         setState(() {
           _isLoading = false;
         });
+        // Pass the correct videoPath (which should now be the path to the video with subtitles)
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                PreviewScreen(videoPath: outputPath, assFilePath: _assFilePath),
+            builder: (context) => PreviewScreen(
+                videoPath: outputPath,
+                assFilePath: null), // No need to pass assFilePath
           ),
         );
       } else {

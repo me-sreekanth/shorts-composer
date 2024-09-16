@@ -1,0 +1,928 @@
+Performing hot restart...
+Restarted application in 683ms.
+D/EGL_emulation( 6928): app_time_stats: avg=127246.19ms min=2.76ms max=763344.12ms count=6
+
+
+
+
+D/EGL_emulation( 6928): app_time_stats: avg=15949.80ms min=15949.80ms max=15949.80ms count=1
+D/EGL_emulation( 6928): app_time_stats: avg=48.85ms min=9.92ms max=758.25ms count=27
+D/ffmpeg-kit-flutter( 6928): selectDocument completed with requestCode: 2342, resultCode: -1, data: Intent { dat=content://media/... flg=0x41 clip={image/* video/* {U(content)}} }.
+I/ffmpeg-kit-flutter( 6928): FFmpegKitFlutterPlugin ignored unsupported activity result for requestCode: 2342.
+D/EGL_emulation( 6928): app_time_stats: avg=57.60ms min=5.96ms max=786.30ms count=24
+D/EGL_emulation( 6928): app_time_stats: avg=784.50ms min=77.50ms max=2159.64ms count=3
+D/EGL_emulation( 6928): app_time_stats: avg=39.36ms min=10.26ms max=627.12ms count=30
+D/FilePickerUtils( 6928): Allowed file extensions mimes: [audio/mpeg]
+D/FilePickerDelegate( 6928): Selected type */*
+D/VRI[MainActivity]( 6928): visibilityChanged oldVisibility=true newVisibility=false
+D/ffmpeg-kit-flutter( 6928): selectDocument completed with requestCode: 41456, resultCode: -1, data: Intent { dat=content://com.android.providers.downloads.documents/... flg=0x1 }.
+I/ffmpeg-kit-flutter( 6928): FFmpegKitFlutterPlugin ignored unsupported activity result for requestCode: 41456.
+I/FilePickerUtils( 6928): Caching from URI: content://com.android.providers.downloads.documents/document/msf%3A18
+D/FilePickerUtils( 6928): File loaded and cached at:/data/user/0/com.example.shorts_composer/cache/file_picker/1726331653643/1-scene-voiceover.mp3
+D/FilePickerDelegate( 6928): File path:[com.mr.flutter.plugin.filepicker.FileInfo@6ed2e3]
+I/ExoPlayerImpl( 6928): Init 20324e0 [ExoPlayerLib/2.18.7] [emu64a, sdk_gphone64_arm64, Google, 35]
+I/DMCodecAdapterFactory( 6928): Creating an asynchronous MediaCodec adapter for track type audio
+D/CCodec  ( 6928): allocate(c2.android.mp3.decoder)
+I/CCodec  ( 6928): setting up 'default' as default (vendor) store
+I/CCodec  ( 6928): Created component [c2.android.mp3.decoder]
+D/CCodecConfig( 6928): read media type: audio/mpeg
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.max-count.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.subscribed-indices.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: input.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.buffers.pool-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.pool-ids.values
+I/CCodecConfig( 6928): query failed after returning 8 values (BAD_INDEX)
+D/CCodecConfig( 6928): c2 config diff is Dict {
+D/CCodecConfig( 6928):   c2::u32 coded.bitrate.value = 64000
+D/CCodecConfig( 6928):   c2::u32 input.buffers.max-size.value = 8192
+D/CCodecConfig( 6928):   c2::u32 input.delay.value = 0
+D/CCodecConfig( 6928):   string input.media-type.value = "audio/mpeg"
+D/CCodecConfig( 6928):   c2::u32 output.large-frame.max-size = 0
+D/CCodecConfig( 6928):   c2::u32 output.large-frame.threshold-size = 0
+D/CCodecConfig( 6928):   string output.media-type.value = "audio/raw"
+D/CCodecConfig( 6928):   c2::u32 raw.channel-count.value = 2
+D/CCodecConfig( 6928):   c2::u32 raw.sample-rate.value = 44100
+D/CCodecConfig( 6928): }
+I/MediaCodec( 6928): MediaCodec will operate in async mode
+D/CCodec  ( 6928): [c2.android.mp3.decoder] buffers are bound to CCodec for this session
+D/CCodecConfig( 6928): no c2 equivalents for log-session-id
+D/CCodecConfig( 6928): no c2 equivalents for flags
+D/CCodecConfig( 6928): config failed => CORRUPTED
+W/Codec2Client( 6928): query -- param skipped: index = 1107298332.
+D/CCodec  ( 6928): client requested max input size 4096, which is smaller than what component recommended (8192); overriding with component recommendation.
+W/CCodec  ( 6928): This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+D/CCodec  ( 6928): encoding statistics level = 0
+D/CCodec  ( 6928): setup formats input: AMessage(what = 0x00000000) = {
+D/CCodec  ( 6928):   int32_t bitrate = 64000
+D/CCodec  ( 6928):   int32_t channel-count = 2
+D/CCodec  ( 6928):   int32_t max-input-size = 8192
+D/CCodec  ( 6928):   string mime = "audio/mpeg"
+D/CCodec  ( 6928):   int32_t sample-rate = 44100
+D/CCodec  ( 6928): }
+D/CCodec  ( 6928): setup formats output: AMessage(what = 0x00000000) = {
+D/CCodec  ( 6928):   int32_t buffer-batch-max-output-size = 0
+D/CCodec  ( 6928):   int32_t buffer-batch-threshold-output-size = 0
+D/CCodec  ( 6928):   int32_t channel-count = 2
+D/CCodec  ( 6928):   string mime = "audio/raw"
+D/CCodec  ( 6928):   int32_t sample-rate = 44100
+D/CCodec  ( 6928):   int32_t android._config-pcm-encoding = 2
+D/CCodec  ( 6928): }
+I/CCodecConfig( 6928): query failed after returning 8 values (BAD_INDEX)
+D/MediaCodec( 6928): keep callback message for reclaim
+W/Codec2Client( 6928): query -- param skipped: index = 1342179345.
+W/Codec2Client( 6928): query -- param skipped: index = 2415921170.
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf51d7128 : 4(25165824 size) total buffers - 4(25165824 size) used buffers - 18/24 (recycle/alloc) - 8/24 (fetch/transfer)
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf520fba8 : 0(0 size) total buffers - 0(0 size) used buffers - 25/30 (recycle/alloc) - 10/30 (fetch/transfer)
+D/CCodecBufferChannel( 6928): [c2.android.mp3.decoder#102] Created input block pool with allocatorID 16 => poolID 20 - OK (0)
+I/CCodecBufferChannel( 6928): [c2.android.mp3.decoder#102] Created output block pool with allocatorID 16 => poolID 52 - OK
+D/CCodecBufferChannel( 6928): [c2.android.mp3.decoder#102] Configured output block pool ids 52 => OK
+D/CCodecConfig( 6928): c2 config diff is   c2::u32 raw.channel-count.value = 1
+D/CCodecBuffers( 6928): [c2.android.mp3.decoder#102:Output[N]] popFromStashAndRegister: at 1000000118616us, output format changed to AMessage(what = 0x00000000) = {
+D/CCodecBuffers( 6928):   int32_t buffer-batch-max-output-size = 0
+D/CCodecBuffers( 6928):   int32_t buffer-batch-threshold-output-size = 0
+D/CCodecBuffers( 6928):   int32_t channel-count = 1
+D/CCodecBuffers( 6928):   string mime = "audio/raw"
+D/CCodecBuffers( 6928):   int32_t sample-rate = 44100
+D/CCodecBuffers( 6928):   int32_t android._config-pcm-encoding = 2
+D/CCodecBuffers( 6928): }
+D/EGL_emulation( 6928): app_time_stats: avg=1020.00ms min=39.47ms max=3892.81ms count=4
+I/ExoPlayerImpl( 6928): Release 20324e0 [ExoPlayerLib/2.18.7] [emu64a, sdk_gphone64_arm64, Google, 35] [goog.exo.core, goog.exo.exoplayer, goog.exo.decoder, goog.exo.datasource, goog.exo.extractor]
+D/CCodecBuffers( 6928): [c2.android.mp3.decoder#102:1D-Output.Impl[N]] Client returned a buffer it does not own according to our record: 0
+D/CCodecBuffers( 6928): [c2.android.mp3.decoder#102:1D-Output.Impl[N]] Client returned a buffer it does not own according to our record: 1
+D/CCodecBuffers( 6928): [c2.android.mp3.decoder#102:1D-Output.Impl[N]] Client returned a buffer it does not own according to our record: 2
+D/MediaCodec( 6928): keep callback message for reclaim
+I/CCodecConfig( 6928): query failed after returning 8 values (BAD_INDEX)
+W/Codec2Client( 6928): query -- param skipped: index = 1342179345.
+W/Codec2Client( 6928): query -- param skipped: index = 2415921170.
+D/CCodecBufferChannel( 6928): [c2.android.mp3.decoder#102] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.android.mp3.decoder#102] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.android.mp3.decoder#102] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.android.mp3.decoder#102] MediaCodec discarded an unknown buffer
+I/hw-BpHwBinder( 6928): onLastStrongRef automatically unlinking death recipients
+D/FilePickerUtils( 6928): Allowed file extensions mimes: [audio/mpeg]
+D/FilePickerDelegate( 6928): Selected type */*
+D/EGL_emulation( 6928): app_time_stats: avg=61.87ms min=12.22ms max=1347.35ms count=31
+D/VRI[MainActivity]( 6928): visibilityChanged oldVisibility=true newVisibility=false
+D/ffmpeg-kit-flutter( 6928): selectDocument completed with requestCode: 41456, resultCode: -1, data: Intent { dat=content://com.android.providers.downloads.documents/... flg=0x1 }.
+I/ffmpeg-kit-flutter( 6928): FFmpegKitFlutterPlugin ignored unsupported activity result for requestCode: 41456.
+I/FilePickerUtils( 6928): Caching from URI: content://com.android.providers.downloads.documents/document/msf%3A20
+D/FilePickerUtils( 6928): File loaded and cached at:/data/user/0/com.example.shorts_composer/cache/file_picker/1726331662108/background-audio.mp3
+D/FilePickerDelegate( 6928): File path:[com.mr.flutter.plugin.filepicker.FileInfo@2e26dd4]
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf5223f68 : 0(0 size) total buffers - 0(0 size) used buffers - 13/18 (recycle/alloc) - 8/24 (fetch/transfer)
+D/BufferPoolAccessor2.0( 6928): evictor expired: 1, evicted: 1
+D/EGL_emulation( 6928): app_time_stats: avg=230.07ms min=8.81ms max=1074.64ms count=5
+I/flutter ( 6928): ASS file created: /data/user/0/com.example.shorts_composer/app_flutter/generated_subtitles.ass
+D/EGL_emulation( 6928): app_time_stats: avg=531.62ms min=20.26ms max=2045.44ms count=4
+D/EGL_emulation( 6928): app_time_stats: avg=29.53ms min=1.61ms max=781.57ms count=33
+D/ffmpeg-kit-flutter( 6928): selectDocument completed with requestCode: 2342, resultCode: -1, data: Intent { dat=content://media/... flg=0x41 clip={image/* video/* {U(content)}} }.
+I/ffmpeg-kit-flutter( 6928): FFmpegKitFlutterPlugin ignored unsupported activity result for requestCode: 2342.
+D/EGL_emulation( 6928): app_time_stats: avg=40.69ms min=10.37ms max=705.55ms count=32
+I/flutter ( 6928): Watermark path: /data/user/0/com.example.shorts_composer/cache/e8766b65-f71e-4fd7-8ca9-c8d63b3ef903/23.png
+I/flutter ( 6928): Executing FFmpeg command for scene 1: [-y, -loop, 1, -i, /data/user/0/com.example.shorts_composer/cache/7b062bc6-d14d-49b9-b912-ffa4453c2e6d/22.png, -i, /data/user/0/com.example.shorts_composer/cache/file_picker/1726331653643/1-scene-voiceover.mp3, -i, /data/user/0/com.example.shorts_composer/cache/e8766b65-f71e-4fd7-8ca9-c8d63b3ef903/23.png, -filter_complex, [0:v]zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d=125:s=1080x1920[bg];[2:v]scale=iw*1.5:-1[wm];[bg][wm]overlay=160:160, -c:v, libx264, -pix_fmt, yuv420p, -c:a, aac, -b:a, 192k, -shortest, -t, 5, /data/user/0/com.example.shorts_composer/app_flutter/1-scene.mp4]
+I/flutter ( 6928): Loading ffmpeg-kit-flutter.
+D/ffmpeg-kit-flutter( 6928): FFmpegKitFlutterPlugin stopped listening to events.
+D/ffmpeg-kit-flutter( 6928): FFmpegKitFlutterPlugin com.arthenica.ffmpegkit.flutter.FFmpegKitFlutterPlugin@157880e started listening to events on io.flutter.plugin.common.EventChannel$IncomingStreamRequestHandler$EventSinkImplementation@ad66279.
+W/WindowOnBackDispatcher( 6928): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 6928): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+D/EGL_emulation( 6928): app_time_stats: avg=5115.28ms min=14.73ms max=10215.82ms count=2
+I/flutter ( 6928): Loaded ffmpeg-kit-flutter-android-full-gpl-arm64-v8a-4.5.1.
+I/flutter ( 6928): FFmpeg Log: ffmpeg version v4.5-dev-3393-g30322ebe3c
+I/flutter ( 6928): FFmpeg Log:  Copyright (c) 2000-2021 the FFmpeg developers
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   built with Android (7155654, based on r399163b1) clang version 11.0.5 (https://android.googlesource.com/toolchain/llvm-project 87f1315dfbea7c137aa2e6d362dbb457e388158d)
+I/flutter ( 6928): FFmpeg Log:   configuration: --cross-prefix=aarch64-linux-android- --sysroot=/files/android-sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/linux-x86_64/sysroot --prefix=/storage/light/projects/ffmpeg-kit/prebuilt/android-arm64/ffmpeg --pkg-config=/usr/bin/pkg-config --enable-version3 --arch=aarch64 --cpu=armv8-a --target-os=android --enable-neon --enable-asm --enable-inline-asm --ar=aarch64-linux-android-ar --cc=aarch64-linux-android24-clang --cxx=aarch64-linux-android24-clang++ --ranlib=aarch64-linux-android-ranlib --strip=aarch64-linux-android-strip --nm=aarch64-linux-android-nm --extra-libs='-L/storage/light/projects/ffmpeg-kit/prebuilt/android-arm64/cpu-features/lib -lndk_compat' --disable-autodetect --enable-cross-compile --enable-pic --enable-jni --enable-optimizations --enable-swscale --disable-static --enable-shared --enable-pthreads --enable-v4l2-m2m --disable-outdev=fbdev --disable-indev=fbdev --enable-small --disable-xmm-clobber-test --disable-debug --enable-lto --disable-neon-clobber-test --disabl
+I/flutter ( 6928): FFmpeg Log:   libavutil      57. 13.100 / 57. 13.100
+I/flutter ( 6928): FFmpeg Log:   libavcodec     59. 15.102 / 59. 15.102
+I/flutter ( 6928): FFmpeg Log:   libavformat    59. 10.100 / 59. 10.100
+I/flutter ( 6928): FFmpeg Log:   libavdevice    59.  1.100 / 59.  1.100
+I/flutter ( 6928): FFmpeg Log:   libavfilter     8. 21.100 /  8. 21.100
+I/flutter ( 6928): FFmpeg Log:   libswscale      6.  1.102 /  6.  1.102
+I/flutter ( 6928): FFmpeg Log:   libswresample   4.  0.100 /  4.  0.100
+I/flutter ( 6928): FFmpeg Log: Input #0, png_pipe, from '/data/user/0/com.example.shorts_composer/cache/7b062bc6-d14d-49b9-b912-ffa4453c2e6d/22.png':
+I/flutter ( 6928): FFmpeg Log:   Duration:
+I/flutter ( 6928): FFmpeg Log: N/A
+I/flutter ( 6928): FFmpeg Log: , bitrate:
+I/flutter ( 6928): FFmpeg Log: N/A
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0
+I/flutter ( 6928): FFmpeg Log: : Video: png, rgb24(pc), 768x1024
+I/flutter ( 6928): FFmpeg Log: ,
+I/flutter ( 6928): FFmpeg Log: 25 fps,
+I/flutter ( 6928): FFmpeg Log: 25 tbr,
+I/flutter ( 6928): FFmpeg Log: 25 tbn
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: Input #1, mp3, from '/data/user/0/com.example.shorts_composer/cache/file_picker/1726331653643/1-scene-voiceover.mp3':
+I/flutter ( 6928): FFmpeg Log:   Metadata:
+I/flutter ( 6928): FFmpeg Log:     encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavf60.16.100
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Duration:
+I/flutter ( 6928): FFmpeg Log: 00:00:06.03
+I/flutter ( 6928): FFmpeg Log: , start:
+I/flutter ( 6928): FFmpeg Log: 0.025057
+I/flutter ( 6928): FFmpeg Log: , bitrate:
+I/flutter ( 6928): FFmpeg Log: 128 kb/s
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #1:0
+I/flutter ( 6928): FFmpeg Log: : Audio: mp3, 44100 Hz, 1 channels (FL+FR), fltp, 128 kb/s
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavc60.31
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: Input #2, png_pipe, from '/data/user/0/com.example.shorts_composer/cache/e8766b65-f71e-4fd7-8ca9-c8d63b3ef903/23.png':
+I/flutter ( 6928): FFmpeg Log:   Duration:
+I/flutter ( 6928): FFmpeg Log: N/A
+I/flutter ( 6928): FFmpeg Log: , bitrate:
+I/flutter ( 6928): FFmpeg Log: N/A
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #2:0
+I/flutter ( 6928): FFmpeg Log: : Video: png, rgb24(pc), 100x53
+I/flutter ( 6928): FFmpeg Log: ,
+I/flutter ( 6928): FFmpeg Log: 25 fps,
+I/flutter ( 6928): FFmpeg Log: 25 tbr,
+I/flutter ( 6928): FFmpeg Log: 25 tbn
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: [png @ 0xb400007d652bfa10] The "sub_text_format" option is deprecated: Deprecated, does nothing
+I/flutter ( 6928): FFmpeg Log: [mp3float @ 0xb400007d6539b4c0] The "sub_text_format" option is deprecated: Deprecated, does nothing
+I/flutter ( 6928): FFmpeg Log: [mp3float @ 0xb400007d6539b4c0] Channel layout 'stereo' with 2 channels does not match specified number of channels 1: ignoring specified channel layout
+I/flutter ( 6928): FFmpeg Log: [png @ 0xb400007d65338eb0] The "sub_text_format" option is deprecated: Deprecated, does nothing
+I/flutter ( 6928): FFmpeg Log: Stream mapping:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0 (png) -> zoompan
+I/flutter ( 6928): FFmpeg Log:  (graph 0)
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #2:0 (png) -> scale
+I/flutter ( 6928): FFmpeg Log:  (graph 0)
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   overlay
+I/flutter ( 6928): FFmpeg Log:  (graph 0)
+I/flutter ( 6928): FFmpeg Log:  -> Stream #0:0 (libx264)
+I/flutter ( 6928): FFmpeg Log:   Stream #1:0 -> #0:1
+I/flutter ( 6928): FFmpeg Log:  (mp3 (mp3float) -> aac (native))
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: Press [q] to stop, [?] for help
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] using cpu capabilities: ARMv8 NEON
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] profile High, level 4.0, 4:2:0, 8-bit
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] 264 - core 163 - H.264/MPEG-4 AVC codec - Copyleft 2003-2021 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=1 lookahead_threads=1 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+I/flutter ( 6928): FFmpeg Log: Output #0, mp4, to '/data/user/0/com.example.shorts_composer/app_flutter/1-scene.mp4':
+I/flutter ( 6928): FFmpeg Log:   Metadata:
+I/flutter ( 6928): FFmpeg Log:     encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavf59.10.100
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0
+I/flutter ( 6928): FFmpeg Log: : Video: h264 (avc1 / 0x31637661), yuv420p(progressive), 1080x1920, q=2-31
+I/flutter ( 6928): FFmpeg Log: ,
+I/flutter ( 6928): FFmpeg Log: 25 fps,
+I/flutter ( 6928): FFmpeg Log: 12800 tbn
+I/flutter ( 6928): FFmpeg Log:  (default)
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavc59.15.102 libx264
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Side data:
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: cpb:
+I/flutter ( 6928): FFmpeg Log: bitrate max/min/avg: 0/0/0 buffer size: 0
+I/flutter ( 6928): FFmpeg Log: vbv_delay: N/A
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:1
+I/flutter ( 6928): FFmpeg Log: : Audio: aac (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 192 kb/s
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavc59.15.102 aac
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Statistics: time=0
+I/flutter ( 6928): FFmpeg Log: frame=    1 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x
+I/flutter ( 6928): FFmpeg Statistics: time=0
+I/flutter ( 6928): FFmpeg Log: frame=   42 fps=0.0 q=28.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x
+D/EGL_emulation( 6928): app_time_stats: avg=20.83ms min=10.88ms max=63.44ms count=48
+I/flutter ( 6928): FFmpeg Statistics: time=384
+I/flutter ( 6928): FFmpeg Log: frame=   53 fps= 44 q=28.0 size=       0kB time=00:00:00.38 bitrate=   1.0kbits/s speed=0.318x
+I/flutter ( 6928): FFmpeg Statistics: time=732
+I/flutter ( 6928): FFmpeg Log: frame=   62 fps= 36 q=28.0 size=       0kB time=00:00:00.73 bitrate=   0.5kbits/s speed=0.42x
+D/EGL_emulation( 6928): app_time_stats: avg=18.82ms min=14.23ms max=23.31ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=1127
+I/flutter ( 6928): FFmpeg Log: frame=   72 fps= 32 q=28.0 size=     256kB time=00:00:01.12 bitrate=1860.8kbits/s speed=0.493x
+I/flutter ( 6928): FFmpeg Statistics: time=1545
+I/flutter ( 6928): FFmpeg Log: frame=   82 fps= 29 q=28.0 size=     256kB time=00:00:01.54 bitrate=1357.5kbits/s speed=0.548x
+D/EGL_emulation( 6928): app_time_stats: avg=19.43ms min=15.20ms max=55.68ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=1939
+I/flutter ( 6928): FFmpeg Log: frame=   91 fps= 27 q=28.0 size=     256kB time=00:00:01.93 bitrate=1081.2kbits/s speed=0.584x
+I/flutter ( 6928): FFmpeg Statistics: time=2288
+I/flutter ( 6928): FFmpeg Log: frame=  101 fps= 26 q=28.0 size=     256kB time=00:00:02.28 bitrate= 916.7kbits/s speed=0.598x
+D/EGL_emulation( 6928): app_time_stats: avg=18.66ms min=14.53ms max=21.62ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=2659
+I/flutter ( 6928): FFmpeg Log: frame=  110 fps= 25 q=28.0 size=     256kB time=00:00:02.65 bitrate= 788.6kbits/s speed=0.611x
+I/flutter ( 6928): FFmpeg Statistics: time=3008
+I/flutter ( 6928): FFmpeg Log: frame=  119 fps= 25 q=28.0 size=     256kB time=00:00:03.00 bitrate= 697.3kbits/s speed=0.62x
+D/EGL_emulation( 6928): app_time_stats: avg=18.73ms min=12.49ms max=24.45ms count=54
+D/EGL_emulation( 6928): app_time_stats: avg=18.79ms min=15.32ms max=21.56ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=5004
+I/flutter ( 6928): FFmpeg Log: frame=  125 fps= 18 q=28.0 Lsize=     693kB time=00:00:05.00 bitrate=1134.4kbits/s speed=0.736x
+I/flutter ( 6928): FFmpeg Log: video:569kB audio:118kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead:
+I/flutter ( 6928): FFmpeg Log: 0.795080%
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] frame I:1     Avg QP:18.95  size:139443
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] frame P:36    Avg QP:18.85  size:  7853
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] frame B:88    Avg QP:23.69  size:  1821
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] consecutive B-frames:  1.6%  9.6% 12.0% 76.8%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] mb I  I16..4:  8.5% 79.4% 12.1%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] mb P  I16..4:  0.0%  0.2%  0.0%  P16..4: 24.1%  4.3%  3.5%  0.0%  0.0%    skip:67.9%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] mb B  I16..4:  0.0%  0.1%  0.0%  B16..8: 28.9%  0.2%  0.0%  direct: 0.0%  skip:70.7%  L0:43.3% L1:56.6% BI: 0.1%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] 8x8 transform intra:78.4% inter:90.4%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] coded y,uvDC,uvAC intra: 84.6% 84.0% 55.3% inter: 2.3% 3.6% 0.2%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] i16 v,h,dc,p:  4% 13%  4% 78%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 11% 23% 13%  9%  7%  6%  9%  7% 15%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 18% 24% 11%  6% 11%  9%  9%  6%  6%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] i8c dc,h,v,p: 49% 25% 19%  7%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] Weighted P-Frames: Y:0.0% UV:0.0%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] ref P L0: 74.8%  6.0% 10.9%  8.4%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] ref B L0: 71.1% 21.5%  7.4%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] ref B L1: 96.8%  3.2%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65321330] kb/s:931.76
+I/flutter ( 6928): FFmpeg Log: [aac @ 0xb400007d6528e4e0] Qavg: 3328.051
+I/flutter ( 6928): FFmpeg command succeeded.
+I/flutter ( 6928): Executing FFmpeg concat command: [-y, -f, concat, -safe, 0, -i, /data/user/0/com.example.shorts_composer/app_flutter/concat.txt, -c:v, libx264, -pix_fmt, yuv420p, -c:a, aac, -b:a, 192k, /data/user/0/com.example.shorts_composer/app_flutter/final_video.mp4]
+I/flutter ( 6928): FFmpeg Log: ffmpeg version v4.5-dev-3393-g30322ebe3c
+I/flutter ( 6928): FFmpeg Log:  Copyright (c) 2000-2021 the FFmpeg developers
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   built with Android (7155654, based on r399163b1) clang version 11.0.5 (https://android.googlesource.com/toolchain/llvm-project 87f1315dfbea7c137aa2e6d362dbb457e388158d)
+I/flutter ( 6928): FFmpeg Log:   configuration: --cross-prefix=aarch64-linux-android- --sysroot=/files/android-sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/linux-x86_64/sysroot --prefix=/storage/light/projects/ffmpeg-kit/prebuilt/android-arm64/ffmpeg --pkg-config=/usr/bin/pkg-config --enable-version3 --arch=aarch64 --cpu=armv8-a --target-os=android --enable-neon --enable-asm --enable-inline-asm --ar=aarch64-linux-android-ar --cc=aarch64-linux-android24-clang --cxx=aarch64-linux-android24-clang++ --ranlib=aarch64-linux-android-ranlib --strip=aarch64-linux-android-strip --nm=aarch64-linux-android-nm --extra-libs='-L/storage/light/projects/ffmpeg-kit/prebuilt/android-arm64/cpu-features/lib -lndk_compat' --disable-autodetect --enable-cross-compile --enable-pic --enable-jni --enable-optimizations --enable-swscale --disable-static --enable-shared --enable-pthreads --enable-v4l2-m2m --disable-outdev=fbdev --disable-indev=fbdev --enable-small --disable-xmm-clobber-test --disable-debug --enable-lto --disable-neon-clobber-test --disabl
+I/flutter ( 6928): FFmpeg Log:   libavutil      57. 13.100 / 57. 13.100
+I/flutter ( 6928): FFmpeg Log:   libavcodec     59. 15.102 / 59. 15.102
+I/flutter ( 6928): FFmpeg Log:   libavformat    59. 10.100 / 59. 10.100
+I/flutter ( 6928): FFmpeg Log:   libavdevice    59.  1.100 / 59.  1.100
+I/flutter ( 6928): FFmpeg Log:   libavfilter     8. 21.100 /  8. 21.100
+I/flutter ( 6928): FFmpeg Log:   libswscale      6.  1.102 /  6.  1.102
+I/flutter ( 6928): FFmpeg Log:   libswresample   4.  0.100 /  4.  0.100
+I/flutter ( 6928): FFmpeg Log: [mov,mp4,m4a,3gp,3g2,mj2 @ 0xb400007ce51d7c70] Auto-inserting h264_mp4toannexb bitstream filter
+I/flutter ( 6928): FFmpeg Log: Input #0, concat, from '/data/user/0/com.example.shorts_composer/app_flutter/concat.txt':
+I/flutter ( 6928): FFmpeg Log:   Duration:
+I/flutter ( 6928): FFmpeg Log: N/A
+I/flutter ( 6928): FFmpeg Log: , start:
+I/flutter ( 6928): FFmpeg Log: -0.023220
+I/flutter ( 6928): FFmpeg Log: , bitrate:
+I/flutter ( 6928): FFmpeg Log: 1126 kb/s
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Video: h264 (avc1 / 0x31637661), yuv420p(progressive), 1080x1920, 932 kb/s
+I/flutter ( 6928): FFmpeg Log: ,
+I/flutter ( 6928): FFmpeg Log: 25 fps,
+I/flutter ( 6928): FFmpeg Log: 25 tbr,
+I/flutter ( 6928): FFmpeg Log: 12800 tbn
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: VideoHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:1
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Audio: aac (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 193 kb/s
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: SoundHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: [h264 @ 0xb400007d652d1b00] The "sub_text_format" option is deprecated: Deprecated, does nothing
+I/flutter ( 6928): FFmpeg Log: [aac @ 0xb400007d652ef560] The "sub_text_format" option is deprecated: Deprecated, does nothing
+I/flutter ( 6928): FFmpeg Log: Stream mapping:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0 -> #0:0
+I/flutter ( 6928): FFmpeg Log:  (h264 (native) -> h264 (libx264))
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:1 -> #0:1
+I/flutter ( 6928): FFmpeg Log:  (aac (native) -> aac (native))
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: Press [q] to stop, [?] for help
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] using cpu capabilities: ARMv8 NEON
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] profile High, level 4.0, 4:2:0, 8-bit
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] 264 - core 163 - H.264/MPEG-4 AVC codec - Copyleft 2003-2021 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=1 lookahead_threads=1 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+D/EGL_emulation( 6928): app_time_stats: avg=18.79ms min=10.91ms max=26.75ms count=54
+I/flutter ( 6928): FFmpeg Log: Output #0, mp4, to '/data/user/0/com.example.shorts_composer/app_flutter/final_video.mp4':
+I/flutter ( 6928): FFmpeg Log:   Metadata:
+I/flutter ( 6928): FFmpeg Log:     encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavf59.10.100
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Video: h264 (avc1 / 0x31637661), yuv420p(progressive), 1080x1920, q=2-31
+I/flutter ( 6928): FFmpeg Log: ,
+I/flutter ( 6928): FFmpeg Log: 25 fps,
+I/flutter ( 6928): FFmpeg Log: 12800 tbn
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: VideoHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavc59.15.102 libx264
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Side data:
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: cpb:
+I/flutter ( 6928): FFmpeg Log: bitrate max/min/avg: 0/0/0 buffer size: 0
+I/flutter ( 6928): FFmpeg Log: vbv_delay: N/A
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:1
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Audio: aac (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 192 kb/s
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: SoundHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavc59.15.102 aac
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Statistics: time=0
+I/flutter ( 6928): FFmpeg Log: frame=    2 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A dup=1 drop=0 speed=   0x
+I/flutter ( 6928): FFmpeg Statistics: time=1614
+I/flutter ( 6928): FFmpeg Log: frame=   42 fps=0.0 q=28.0 size=       0kB time=00:00:01.61 bitrate=   0.2kbits/s dup=1 drop=0 speed=2.26x
+D/EGL_emulation( 6928): app_time_stats: avg=5.00ms min=1.98ms max=30.33ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=2056
+I/flutter ( 6928): FFmpeg Log: frame=   53 fps= 43 q=28.0 size=       0kB time=00:00:02.05 bitrate=   0.2kbits/s dup=1 drop=0 speed=1.69x
+I/flutter ( 6928): FFmpeg Statistics: time=2450
+I/flutter ( 6928): FFmpeg Log: frame=   63 fps= 36 q=28.0 size=       0kB time=00:00:02.45 bitrate=   0.2kbits/s dup=1 drop=0 speed= 1.4x
+D/EGL_emulation( 6928): app_time_stats: avg=5.07ms min=1.92ms max=10.58ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=2891
+I/flutter ( 6928): FFmpeg Log: frame=   74 fps= 32 q=28.0 size=     256kB time=00:00:02.89 bitrate= 725.3kbits/s dup=1 drop=0 speed=1.26x
+I/flutter ( 6928): FFmpeg Statistics: time=3240
+I/flutter ( 6928): FFmpeg Log: frame=   83 fps= 29 q=28.0 size=     256kB time=00:00:03.24 bitrate= 647.3kbits/s dup=1 drop=0 speed=1.12x
+D/EGL_emulation( 6928): app_time_stats: avg=5.61ms min=1.61ms max=11.12ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=3658
+I/flutter ( 6928): FFmpeg Log: frame=   93 fps= 27 q=28.0 size=     256kB time=00:00:03.65 bitrate= 573.4kbits/s dup=1 drop=0 speed=1.08x
+I/flutter ( 6928): FFmpeg Statistics: time=4052
+I/flutter ( 6928): FFmpeg Log: frame=  103 fps= 26 q=28.0 size=     256kB time=00:00:04.05 bitrate= 517.5kbits/s dup=1 drop=0 speed=1.04x
+D/EGL_emulation( 6928): app_time_stats: avg=4.71ms min=1.80ms max=11.55ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=4378
+I/flutter ( 6928): FFmpeg Log: frame=  111 fps= 25 q=28.0 size=     256kB time=00:00:04.37 bitrate= 479.1kbits/s dup=1 drop=0 speed=0.986x
+I/flutter ( 6928): FFmpeg Statistics: time=4772
+I/flutter ( 6928): FFmpeg Log: frame=  121 fps= 24 q=28.0 size=     512kB time=00:00:04.77 bitrate= 878.9kbits/s dup=1 drop=0 speed=0.964x
+D/EGL_emulation( 6928): app_time_stats: avg=4.67ms min=1.76ms max=8.53ms count=54
+D/EGL_emulation( 6928): app_time_stats: avg=4.79ms min=1.76ms max=8.47ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=5028
+I/flutter ( 6928): FFmpeg Log: frame=  126 fps= 19 q=28.0 Lsize=     739kB time=00:00:05.02 bitrate=1204.3kbits/s dup=1 drop=0 speed=0.739x
+I/flutter ( 6928): FFmpeg Log: video:614kB audio:120kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead:
+I/flutter ( 6928): FFmpeg Log: 0.746153%
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] frame I:1     Avg QP:18.28  size:136711
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] frame P:38    Avg QP:18.66  size:  8524
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] frame B:87    Avg QP:23.54  size:  1923
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] consecutive B-frames:  1.6% 15.9%  9.5% 73.0%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] mb I  I16..4:  7.8% 81.2% 11.0%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] mb P  I16..4:  0.0%  0.2%  0.0%  P16..4: 25.5%  5.0%  3.6%  0.0%  0.0%    skip:65.6%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] mb B  I16..4:  0.0%  0.2%  0.0%  B16..8: 29.1%  0.2%  0.0%  direct: 0.0%  skip:70.4%  L0:40.5% L1:59.4% BI: 0.1%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] 8x8 transform intra:79.4% inter:90.5%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] coded y,uvDC,uvAC intra: 81.7% 82.1% 50.1% inter: 2.3% 4.1% 0.1%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] i16 v,h,dc,p:  8% 17%  6% 69%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 11% 25% 13%  9%  7%  6%  9%  6% 14%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 18% 27% 12%  5% 10%  8%  8%  5%  6%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] i8c dc,h,v,p: 49% 26% 19%  6%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] Weighted P-Frames: Y:0.0% UV:0.0%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] ref P L0: 74.5%  7.6% 11.6%  6.3%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] ref B L0: 78.4% 17.4%  4.2%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] ref B L1: 97.3%  2.7%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d652cf880] kb/s:996.70
+I/flutter ( 6928): FFmpeg Log: [aac @ 0xb400007d65352410] Qavg: 4012.867
+I/flutter ( 6928): Executing FFmpeg subtitle command: [-i, /data/user/0/com.example.shorts_composer/app_flutter/final_video.mp4, -vf, ass=/data/user/0/com.example.shorts_composer/app_flutter/generated_subtitles.ass, -c:v, libx264, -c:a, aac, -b:a, 192k, -y, /data/user/0/com.example.shorts_composer/app_flutter/final_video_with_subs.mp4]
+I/flutter ( 6928): FFmpeg Log: ffmpeg version v4.5-dev-3393-g30322ebe3c
+I/flutter ( 6928): FFmpeg Log:  Copyright (c) 2000-2021 the FFmpeg developers
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   built with Android (7155654, based on r399163b1) clang version 11.0.5 (https://android.googlesource.com/toolchain/llvm-project 87f1315dfbea7c137aa2e6d362dbb457e388158d)
+I/flutter ( 6928): FFmpeg Log:   configuration: --cross-prefix=aarch64-linux-android- --sysroot=/files/android-sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/linux-x86_64/sysroot --prefix=/storage/light/projects/ffmpeg-kit/prebuilt/android-arm64/ffmpeg --pkg-config=/usr/bin/pkg-config --enable-version3 --arch=aarch64 --cpu=armv8-a --target-os=android --enable-neon --enable-asm --enable-inline-asm --ar=aarch64-linux-android-ar --cc=aarch64-linux-android24-clang --cxx=aarch64-linux-android24-clang++ --ranlib=aarch64-linux-android-ranlib --strip=aarch64-linux-android-strip --nm=aarch64-linux-android-nm --extra-libs='-L/storage/light/projects/ffmpeg-kit/prebuilt/android-arm64/cpu-features/lib -lndk_compat' --disable-autodetect --enable-cross-compile --enable-pic --enable-jni --enable-optimizations --enable-swscale --disable-static --enable-shared --enable-pthreads --enable-v4l2-m2m --disable-outdev=fbdev --disable-indev=fbdev --enable-small --disable-xmm-clobber-test --disable-debug --enable-lto --disable-neon-clobber-test --disabl
+I/flutter ( 6928): FFmpeg Log:   libavutil      57. 13.100 / 57. 13.100
+I/flutter ( 6928): FFmpeg Log:   libavcodec     59. 15.102 / 59. 15.102
+I/flutter ( 6928): FFmpeg Log:   libavformat    59. 10.100 / 59. 10.100
+I/flutter ( 6928): FFmpeg Log:   libavdevice    59.  1.100 / 59.  1.100
+I/flutter ( 6928): FFmpeg Log:   libavfilter     8. 21.100 /  8. 21.100
+I/flutter ( 6928): FFmpeg Log:   libswscale      6.  1.102 /  6.  1.102
+I/flutter ( 6928): FFmpeg Log:   libswresample   4.  0.100 /  4.  0.100
+I/flutter ( 6928): FFmpeg Log: Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '/data/user/0/com.example.shorts_composer/app_flutter/final_video.mp4':
+I/flutter ( 6928): FFmpeg Log:   Metadata:
+I/flutter ( 6928): FFmpeg Log:     major_brand     :
+I/flutter ( 6928): FFmpeg Log: isom
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     minor_version   :
+I/flutter ( 6928): FFmpeg Log: 512
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     compatible_brands:
+I/flutter ( 6928): FFmpeg Log: isomiso2avc1mp41
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavf59.10.100
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Duration:
+I/flutter ( 6928): FFmpeg Log: 00:00:05.04
+I/flutter ( 6928): FFmpeg Log: , start:
+I/flutter ( 6928): FFmpeg Log: 0.000000
+I/flutter ( 6928): FFmpeg Log: , bitrate:
+I/flutter ( 6928): FFmpeg Log: 1201 kb/s
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0
+I/flutter ( 6928): FFmpeg Log: [0x1]
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Video: h264 (avc1 / 0x31637661), yuv420p(progressive), 1080x1920, 997 kb/s
+I/flutter ( 6928): FFmpeg Log: ,
+I/flutter ( 6928): FFmpeg Log: 25 fps,
+I/flutter ( 6928): FFmpeg Log: 25 tbr,
+I/flutter ( 6928): FFmpeg Log: 12800 tbn
+I/flutter ( 6928): FFmpeg Log:  (default)
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: VideoHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:1
+I/flutter ( 6928): FFmpeg Log: [0x2]
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Audio: aac (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 195 kb/s
+I/flutter ( 6928): FFmpeg Log:  (default)
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: SoundHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: [h264 @ 0xb400007d6531c590] The "sub_text_format" option is deprecated: Deprecated, does nothing
+I/flutter ( 6928): FFmpeg Log: [aac @ 0xb400007d6528e4e0] The "sub_text_format" option is deprecated: Deprecated, does nothing
+I/flutter ( 6928): FFmpeg Log: Stream mapping:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0 -> #0:0
+I/flutter ( 6928): FFmpeg Log:  (h264 (native) -> h264 (libx264))
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:1 -> #0:1
+I/flutter ( 6928): FFmpeg Log:  (aac (native) -> aac (native))
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: Press [q] to stop, [?] for help
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] libass API version: 0x1502000
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] libass source: commit: 0.15.2-0-gc967a5a3d9ec0d36af1148b3fdf2f307a21dd122
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] Shaper: FriBidi 1.0.11 (SIMPLE) HarfBuzz-ng 3.2.0 (COMPLEX)
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] No usable fontconfig configuration file found, using fallback.
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] Using font provider fontconfig
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] Added subtitle file: '/data/user/0/com.example.shorts_composer/app_flutter/generated_subtitles.ass' (2 styles, 80 events)
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] Neither PlayResX nor PlayResY defined. Assuming 384x288
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10] fontselect: failed to find any fallback with glyph 0x0 for font: (Verdana, 700, 0)
+I/flutter ( 6928): FFmpeg Log: [Parsed_ass_0 @ 0xb400007c951d7e10]
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] using cpu capabilities: ARMv8 NEON
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] profile High, level 4.0, 4:2:0, 8-bit
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] 264 - core 163 - H.264/MPEG-4 AVC codec - Copyleft 2003-2021 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=1 lookahead_threads=1 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+I/flutter ( 6928): FFmpeg Log: Output #0, mp4, to '/data/user/0/com.example.shorts_composer/app_flutter/final_video_with_subs.mp4':
+I/flutter ( 6928): FFmpeg Log:   Metadata:
+I/flutter ( 6928): FFmpeg Log:     major_brand     :
+I/flutter ( 6928): FFmpeg Log: isom
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     minor_version   :
+I/flutter ( 6928): FFmpeg Log: 512
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     compatible_brands:
+I/flutter ( 6928): FFmpeg Log: isomiso2avc1mp41
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavf59.10.100
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:0
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Video: h264 (avc1 / 0x31637661), yuv420p(progressive), 1080x1920, q=2-31
+I/flutter ( 6928): FFmpeg Log: ,
+I/flutter ( 6928): FFmpeg Log: 25 fps,
+I/flutter ( 6928): FFmpeg Log: 12800 tbn
+I/flutter ( 6928): FFmpeg Log:  (default)
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: VideoHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavc59.15.102 libx264
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Side data:
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: cpb:
+I/flutter ( 6928): FFmpeg Log: bitrate max/min/avg: 0/0/0 buffer size: 0
+I/flutter ( 6928): FFmpeg Log: vbv_delay: N/A
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:   Stream #0:1
+I/flutter ( 6928): FFmpeg Log: (und)
+I/flutter ( 6928): FFmpeg Log: : Audio: aac (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 192 kb/s
+I/flutter ( 6928): FFmpeg Log:  (default)
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:     Metadata:
+I/flutter ( 6928): FFmpeg Log:       handler_name    :
+I/flutter ( 6928): FFmpeg Log: SoundHandler
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       vendor_id       :
+I/flutter ( 6928): FFmpeg Log: [0][0][0][0]
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log:       encoder         :
+I/flutter ( 6928): FFmpeg Log: Lavc59.15.102 aac
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Statistics: time=0
+I/flutter ( 6928): FFmpeg Log: frame=    1 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x
+D/EGL_emulation( 6928): app_time_stats: avg=9.27ms min=1.90ms max=42.64ms count=51
+I/flutter ( 6928): FFmpeg Statistics: time=1638
+I/flutter ( 6928): FFmpeg Log: frame=   42 fps=0.0 q=28.0 size=       0kB time=00:00:01.63 bitrate=   0.2kbits/s speed=2.04x
+D/EGL_emulation( 6928): app_time_stats: avg=18.71ms min=14.04ms max=25.78ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=2148
+I/flutter ( 6928): FFmpeg Log: frame=   55 fps= 40 q=28.0 size=       0kB time=00:00:02.14 bitrate=   0.2kbits/s speed=1.57x
+I/flutter ( 6928): FFmpeg Statistics: time=2636
+I/flutter ( 6928): FFmpeg Log: frame=   67 fps= 35 q=28.0 size=       0kB time=00:00:02.63 bitrate=   0.1kbits/s speed=1.38x
+D/EGL_emulation( 6928): app_time_stats: avg=18.75ms min=14.18ms max=21.99ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=3031
+I/flutter ( 6928): FFmpeg Log: frame=   77 fps= 31 q=28.0 size=     256kB time=00:00:03.03 bitrate= 692.0kbits/s speed=1.22x
+I/flutter ( 6928): FFmpeg Statistics: time=3472
+I/flutter ( 6928): FFmpeg Log: frame=   88 fps= 29 q=28.0 size=     256kB time=00:00:03.47 bitrate= 604.1kbits/s speed=1.15x
+D/EGL_emulation( 6928): app_time_stats: avg=18.78ms min=11.11ms max=24.04ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=3867
+I/flutter ( 6928): FFmpeg Log: frame=   98 fps= 28 q=28.0 size=     256kB time=00:00:03.86 bitrate= 542.4kbits/s speed=1.09x
+I/flutter ( 6928): FFmpeg Statistics: time=4308
+I/flutter ( 6928): FFmpeg Log: frame=  109 fps= 27 q=28.0 size=     256kB time=00:00:04.30 bitrate= 486.9kbits/s speed=1.05x
+D/EGL_emulation( 6928): app_time_stats: avg=18.75ms min=15.53ms max=21.74ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=4633
+I/flutter ( 6928): FFmpeg Log: frame=  117 fps= 25 q=28.0 size=     512kB time=00:00:04.63 bitrate= 905.3kbits/s speed=   1x
+I/flutter ( 6928): FFmpeg Statistics: time=4981
+I/flutter ( 6928): FFmpeg Log: frame=  126 fps= 25 q=28.0 size=     512kB time=00:00:04.98 bitrate= 842.0kbits/s speed=0.973x
+D/EGL_emulation( 6928): app_time_stats: avg=18.66ms min=15.34ms max=20.49ms count=54
+D/EGL_emulation( 6928): app_time_stats: avg=18.78ms min=15.95ms max=21.06ms count=54
+I/flutter ( 6928): FFmpeg Statistics: time=5028
+I/flutter ( 6928): FFmpeg Log: frame=  126 fps= 19 q=28.0 Lsize=     761kB time=00:00:05.02 bitrate=1240.4kbits/s speed=0.754x
+I/flutter ( 6928): FFmpeg Log: video:636kB audio:120kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead:
+I/flutter ( 6928): FFmpeg Log: 0.725305%
+I/flutter ( 6928): FFmpeg Log:
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] frame I:1     Avg QP:18.26  size:133862
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] frame P:39    Avg QP:18.81  size:  8989
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] frame B:86    Avg QP:23.71  size:  1932
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] consecutive B-frames:  1.6% 17.5% 14.3% 66.7%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] mb I  I16..4:  8.0% 81.7% 10.4%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] mb P  I16..4:  0.1%  0.2%  0.0%  P16..4: 26.4%  5.4%  3.7%  0.0%  0.0%    skip:64.2%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] mb B  I16..4:  0.0%  0.2%  0.0%  B16..8: 28.6%  0.2%  0.0%  direct: 0.0%  skip:70.9%  L0:36.1% L1:63.8% BI: 0.1%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] 8x8 transform intra:79.4% inter:90.7%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] coded y,uvDC,uvAC intra: 79.4% 81.2% 48.0% inter: 2.6% 4.6% 0.1%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] i16 v,h,dc,p: 11% 17%  9% 63%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 12% 25% 14%  9%  7%  6%  9%  6% 14%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 18% 27% 12%  5% 10%  8%  8%  5%  6%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] i8c dc,h,v,p: 49% 25% 19%  6%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] Weighted P-Frames: Y:0.0% UV:0.0%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] ref P L0: 73.1%  8.3% 12.8%  5.9%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] ref B L0: 74.4% 20.6%  5.0%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] ref B L1: 97.8%  2.2%
+I/flutter ( 6928): FFmpeg Log: [libx264 @ 0xb400007d65290bb0] kb/s:1032.70
+I/flutter ( 6928): FFmpeg Log: [aac @ 0xb400007d652cefe0] Qavg: 4232.313
+I/ExoPlayerImpl( 6928): Release 9166a7c [ExoPlayerLib/2.18.7] [emu64a, sdk_gphone64_arm64, Google, 35] [goog.exo.core, goog.exo.exoplayer, goog.exo.decoder, goog.exo.datasource, goog.exo.extractor]
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) cancelBuffer: BufferQueue has been abandoned
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf51d7128 : 4(25165824 size) total buffers - 4(25165824 size) used buffers - 18/24 (recycle/alloc) - 8/24 (fetch/transfer)
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf520fba8 : 0(0 size) total buffers - 0(0 size) used buffers - 25/30 (recycle/alloc) - 10/30 (fetch/transfer)
+D/MediaCodec( 6928): keep callback message for reclaim
+I/CCodecConfig( 6928): query failed after returning 12 values (BAD_INDEX)
+W/Codec2Client( 6928): query -- param skipped: index = 1342179345.
+W/Codec2Client( 6928): query -- param skipped: index = 2415921170.
+W/Codec2Client( 6928): query -- param skipped: index = 1610614798.
+E/BufferQueueProducer( 6928): [SurfaceTexture-0-6928-0](id:1b1000000006,api:3,p:6928,c:6928) dequeueBuffer: BufferQueue has been abandoned
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#273] flushed work; ignored.
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#273] Discard frames from previous generation.
+D/CCodecBuffers( 6928): [c2.android.aac.decoder#742:1D-Output.Impl[N]] Client returned a buffer it does not own according to our record: 0
+D/CCodecBuffers( 6928): [c2.android.aac.decoder#742:1D-Output.Impl[N]] Client returned a buffer it does not own according to our record: 1
+D/CCodecBuffers( 6928): [c2.android.aac.decoder#742:1D-Output.Impl[N]] Client returned a buffer it does not own according to our record: 2
+D/MediaCodec( 6928): keep callback message for reclaim
+I/CCodecConfig( 6928): query failed after returning 21 values (BAD_INDEX)
+W/Codec2Client( 6928): query -- param skipped: index = 1342179345.
+W/Codec2Client( 6928): query -- param skipped: index = 2415921170.
+W/Codec2Client( 6928): query -- param skipped: index = 1610614798.
+D/SurfaceUtils( 6928): connecting to surface 0xb400007db522c210, reason connectToSurface
+I/MediaCodec( 6928): [c2.goldfish.h264.decoder] setting surface generation to 7094274
+D/SurfaceUtils( 6928): disconnecting from surface 0xb400007db522c210, reason connectToSurface(reconnect)
+D/SurfaceUtils( 6928): connecting to surface 0xb400007db522c200, reason connectToSurface(reconnect-with-listener)
+D/Codec2-OutputBufferQueue( 6928): remote graphic buffer migration 0/0
+D/Codec2Client( 6928): setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+D/Codec2Client( 6928): setOutputSurface -- generation=7094274 consumer usage=0x900
+D/Codec2Client( 6928): Surface configure completed
+D/SurfaceUtils( 6928): disconnecting from surface 0xb400007db5232840, reason disconnectFromSurface
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#273] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#273] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#273] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#273] MediaCodec discarded an unknown buffer
+D/SurfaceUtils( 6928): disconnecting from surface 0xb400007db522c210, reason disconnectFromSurface
+I/hw-BpHwBinder( 6928): onLastStrongRef automatically unlinking death recipients
+D/CCodecBufferChannel( 6928): [c2.android.aac.decoder#742] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.android.aac.decoder#742] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.android.aac.decoder#742] MediaCodec discarded an unknown buffer
+D/CCodecBufferChannel( 6928): [c2.android.aac.decoder#742] MediaCodec discarded an unknown buffer
+I/hw-BpHwBinder( 6928): onLastStrongRef automatically unlinking death recipients
+I/ExoPlayerImpl( 6928): Init 318033b [ExoPlayerLib/2.18.7] [emu64a, sdk_gphone64_arm64, Google, 35]
+I/DMCodecAdapterFactory( 6928): Creating an asynchronous MediaCodec adapter for track type video
+D/CCodec  ( 6928): allocate(c2.goldfish.h264.decoder)
+I/CCodec  ( 6928): setting up 'default' as default (vendor) store
+I/CCodec  ( 6928): Created component [c2.goldfish.h264.decoder]
+D/CCodecConfig( 6928): read media type: video/avc
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.max-count.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.subscribed-indices.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: input.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.buffers.pool-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.pool-ids.values
+D/ReflectedParamUpdater( 6928): ignored struct field coded.color-format.locations
+D/CCodecConfig( 6928): ignoring local param raw.size (0xd2001800) as it is already supported
+D/CCodecConfig( 6928): ignoring local param default.color (0x5200180b) as it is already supported
+D/ReflectedParamUpdater( 6928): ignored struct field raw.hdr-static-info.mastering
+I/CCodecConfig( 6928): query failed after returning 12 values (BAD_INDEX)
+D/CCodecConfig( 6928): c2 config diff is Dict {
+D/CCodecConfig( 6928):   c2::u32 coded.pl.level = 20496
+D/CCodecConfig( 6928):   c2::u32 coded.pl.profile = 20481
+D/CCodecConfig( 6928):   c2::u32 coded.vui.color.matrix = 0
+D/CCodecConfig( 6928):   c2::u32 coded.vui.color.primaries = 0
+D/CCodecConfig( 6928):   c2::u32 coded.vui.color.range = 2
+D/CCodecConfig( 6928):   c2::u32 coded.vui.color.transfer = 0
+D/CCodecConfig( 6928):   c2::u32 default.color.matrix = 0
+D/CCodecConfig( 6928):   c2::u32 default.color.primaries = 0
+D/CCodecConfig( 6928):   c2::u32 default.color.range = 0
+D/CCodecConfig( 6928):   c2::u32 default.color.transfer = 0
+D/CCodecConfig( 6928):   c2::u32 input.buffers.max-size.value = 6291456
+D/CCodecConfig( 6928):   c2::u32 input.delay.value = 0
+D/CCodecConfig( 6928):   string input.media-type.value = "video/avc"
+D/CCodecConfig( 6928):   c2::u32 output.delay.value = 8
+D/CCodecConfig( 6928):   string output.media-type.value = "video/raw"
+D/CCodecConfig( 6928):   c2::u32 raw.color.matrix = 0
+D/CCodecConfig( 6928):   c2::u32 raw.color.primaries = 0
+D/CCodecConfig( 6928):   c2::u32 raw.color.range = 2
+D/CCodecConfig( 6928):   c2::u32 raw.color.transfer = 0
+D/CCodecConfig( 6928):   c2::u32 raw.max-size.height = 240
+D/CCodecConfig( 6928):   c2::u32 raw.max-size.width = 320
+D/CCodecConfig( 6928):   c2::u32 raw.pixel-format.value = 35
+D/CCodecConfig( 6928):   c2::i32 raw.rotation.flip = 0
+D/CCodecConfig( 6928):   c2::i32 raw.rotation.value = 0
+D/CCodecConfig( 6928):   c2::u32 raw.sar.height = 1
+D/CCodecConfig( 6928):   c2::u32 raw.sar.width = 1
+D/CCodecConfig( 6928):   c2::u32 raw.size.height = 240
+D/CCodecConfig( 6928):   c2::u32 raw.size.width = 320
+D/CCodecConfig( 6928):   c2:
+W/ColorUtils( 6928): expected specified color aspects (2:0:0:0)
+I/MediaCodec( 6928): MediaCodec will operate in async mode
+D/SurfaceUtils( 6928): connecting to surface 0xb400007db522c210, reason connectToSurface
+I/MediaCodec( 6928): [c2.goldfish.h264.decoder] setting surface generation to 7094275
+D/SurfaceUtils( 6928): disconnecting from surface 0xb400007db522c210, reason connectToSurface(reconnect)
+D/SurfaceUtils( 6928): connecting to surface 0xb400007db522c200, reason connectToSurface(reconnect-with-listener)
+D/CCodec  ( 6928): [c2.goldfish.h264.decoder] buffers are bound to CCodec for this session
+D/CCodecConfig( 6928): no c2 equivalents for csd-1
+D/CCodecConfig( 6928): no c2 equivalents for log-session-id
+D/CCodecConfig( 6928): no c2 equivalents for native-window
+D/CCodecConfig( 6928): no c2 equivalents for native-window-generation
+D/CCodecConfig( 6928): no c2 equivalents for flags
+D/CCodecConfig( 6928): config failed => CORRUPTED
+D/CCodecConfig( 6928): c2 config diff is   c2::u32 raw.max-size.height = 1920
+D/CCodecConfig( 6928):   c2::u32 raw.max-size.width = 1080
+D/CCodecConfig( 6928):   c2::u32 raw.size.height = 1920
+D/CCodecConfig( 6928):   c2::u32 raw.size.width = 1080
+W/Codec2Client( 6928): query -- param skipped: index = 1107298332.
+D/CCodec  ( 6928): client requested max input size 201912, which is smaller than what component recommended (6291456); overriding with component recommendation.
+W/CCodec  ( 6928): This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+D/CCodec  ( 6928): encoding statistics level = 0
+D/CCodec  ( 6928): setup formats input: AMessage(what = 0x00000000) = {
+D/CCodec  ( 6928):   int32_t height = 1920
+D/CCodec  ( 6928):   int32_t level = 65536
+D/CCodec  ( 6928):   int32_t max-input-size = 6291456
+D/CCodec  ( 6928):   string mime = "video/avc"
+D/CCodec  ( 6928):   int32_t profile = 65536
+D/CCodec  ( 6928):   int32_t width = 1080
+D/CCodec  ( 6928):   Rect crop(0, 0, 1079, 1919)
+D/CCodec  ( 6928): }
+D/CCodec  ( 6928): setup formats output: AMessage(what = 0x00000000) = {
+D/CCodec  ( 6928):   int32_t android._color-format = 2135033992
+D/CCodec  ( 6928):   int32_t android._video-scaling = 1
+D/CCodec  ( 6928):   int32_t rotation-degrees = 0
+D/CCodec  ( 6928):   int32_t color-standard = 1
+D/CCodec  ( 6928):   int32_t color-range = 2
+D/CCodec  ( 6928):   int32_t color-transfer = 3
+D/CCodec  ( 6928):   int32_t sar-height = 1
+D/CCodec  ( 6928):   int32_t sar-width = 1
+D/CCodec  ( 6928):   Rect crop(0, 0, 1079, 1919)
+D/CCodec  ( 6928):   int32_t width = 1080
+D/CCodec  ( 6928):   int32_t height = 1920
+D/CCodec  ( 6928):   int32_t max-height = 1920
+D/CCodec  ( 6928):   int32_t max-width = 1080
+D/CCodec  ( 6928):   string mime = "video/raw"
+D/CCodec  ( 6928):   int32_t android._dataspace = 260
+D/CCodec  ( 6928):   int32_t color-format = 2130708361
+D/CCodec  ( 6928): }
+I/CCodecConfig( 6928): query failed after returning 12 values (BAD_INDEX)
+D/MediaCodec( 6928): keep callback message for reclaim
+W/Codec2Client( 6928): query -- param skipped: index = 1342179345.
+W/Codec2Client( 6928): query -- param skipped: index = 2415921170.
+W/Codec2Client( 6928): query -- param skipped: index = 1610614798.
+W/Codec2Client( 6928): query -- param skipped: index = 2684356609.
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#969] Created input block pool with allocatorID 16 => poolID 21 - OK (0)
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#969] Query output surface allocator returned 0 params => BAD_INDEX (6)
+I/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#969] Created output block pool with allocatorID 18 => poolID 21 - OK
+D/CCodecBufferChannel( 6928): [c2.goldfish.h264.decoder#969] Configured output block pool ids 21 => OK
+D/Codec2-OutputBufferQueue( 6928): remote graphic buffer migration 0/0
+D/Codec2Client( 6928): setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+D/Codec2Client( 6928): setOutputSurface -- generation=7094275 consumer usage=0x900
+D/Codec2Client( 6928): Surface configure completed
+I/DMCodecAdapterFactory( 6928): Creating an asynchronous MediaCodec adapter for track type audio
+D/CCodec  ( 6928): allocate(c2.android.aac.decoder)
+I/CCodec  ( 6928): setting up 'default' as default (vendor) store
+I/CCodec  ( 6928): Created component [c2.android.aac.decoder]
+D/CCodecConfig( 6928): read media type: audio/mp4a-latm
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.max-count.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.subscribed-indices.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: input.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: output.buffers.pool-ids.values
+D/ReflectedParamUpdater( 6928): extent() != 1 for single value type: algo.buffers.pool-ids.values
+D/BufferPoolAccessor2.0( 6928): Destruction - bufferpool2 0xb400007cf520fba8 cached: 0/0M, 0/0% in use; allocs: 35, 71% recycled; transfers: 30, 67% unfetched
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf5223f68 : 0(0 size) total buffers - 0(0 size) used buffers - 13/18 (recycle/alloc) - 8/24 (fetch/transfer)
+D/BufferPoolAccessor2.0( 6928): Destruction - bufferpool2 0xb400007cf5223f68 cached: 0/0M, 0/0% in use; allocs: 18, 72% recycled; transfers: 24, 67% unfetched
+I/CCodecConfig( 6928): query failed after returning 21 values (BAD_INDEX)
+D/CCodecConfig( 6928): c2 config diff is Dict {
+D/CCodecConfig( 6928):   c2::u32 coded.aac-packaging.value = 0
+D/CCodecConfig( 6928):   c2::u32 coded.bitrate.value = 64000
+D/CCodecConfig( 6928):   c2::u32 coded.pl.level = 0
+D/CCodecConfig( 6928):   c2::u32 coded.pl.profile = 8192
+D/CCodecConfig( 6928):   c2::i32 coding.drc.album-mode.value = 0
+D/CCodecConfig( 6928):   c2::float coding.drc.attenuation-factor.value = 1
+D/CCodecConfig( 6928):   c2::float coding.drc.boost-factor.value = 1
+D/CCodecConfig( 6928):   c2::i32 coding.drc.compression-mode.value = 3
+D/CCodecConfig( 6928):   c2::i32 coding.drc.effect-type.value = 3
+D/CCodecConfig( 6928):   c2::float coding.drc.encoded-level.value = 0.25
+D/CCodecConfig( 6928):   c2::float coding.drc.reference-level.value = -16
+D/CCodecConfig( 6928):   c2::u32 input.buffers.max-size.value = 8192
+D/CCodecConfig( 6928):   c2::u32 input.delay.value = 0
+D/CCodecConfig( 6928):   string input.media-type.value = "audio/mp4a-latm"
+D/CCodecConfig( 6928):   c2::u32 output.delay.value = 2
+D/CCodecConfig( 6928):   c2::float output.drc.output-loudness.value = 0.25
+D/CCodecConfig( 6928):   c2::u32 output.large-frame.max-size = 0
+D/CCodecConfig( 6928):   c2::u32 output.large-frame.threshold-size = 0
+D/CCodecConfig( 6928):   string output.media-type.value = "audio/raw"
+D/CCodecConfig( 6928):   c2::u32 raw.channel-count.value = 1
+D/CCodecConfig( 6928):   c2::u32 raw.channel-mask.value = 0
+D/CCodecConfig( 6928):   c2::u32 raw.max-channel-count.value = 8
+D/CCodecConfig( 6928):   c2::u32 raw.sample-rate.value = 44100
+D/CCodecConfig( 6928): }
+I/MediaCodec( 6928): MediaCodec will operate in async mode
+D/CCodec  ( 6928): [c2.android.aac.decoder] buffers are bound to CCodec for this session
+D/CCodecConfig( 6928): no c2 equivalents for log-session-id
+D/CCodecConfig( 6928): no c2 equivalents for flags
+D/CCodecConfig( 6928): config failed => CORRUPTED
+D/CCodecConfig( 6928): c2 config diff is   c2::u32 raw.channel-count.value = 2
+W/Codec2Client( 6928): query -- param skipped: index = 1107298332.
+D/CCodec  ( 6928): client requested max input size 958, which is smaller than what component recommended (8192); overriding with component recommendation.
+W/CCodec  ( 6928): This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+D/CCodec  ( 6928): encoding statistics level = 0
+D/CCodec  ( 6928): setup formats input: AMessage(what = 0x00000000) = {
+D/CCodec  ( 6928):   int32_t aac-drc-album-mode = 0
+D/CCodec  ( 6928):   int32_t aac-drc-boost-level = 127
+D/CCodec  ( 6928):   int32_t aac-drc-cut-level = 127
+D/CCodec  ( 6928):   int32_t aac-drc-effect-type = 3
+D/CCodec  ( 6928):   int32_t aac-encoded-target-level = -1
+D/CCodec  ( 6928):   int32_t aac-max-output-channel_count = 8
+D/CCodec  ( 6928):   int32_t aac-target-ref-level = 64
+D/CCodec  ( 6928):   int32_t bitrate = 64000
+D/CCodec  ( 6928):   int32_t channel-count = 2
+D/CCodec  ( 6928):   int32_t channel-mask = 0
+D/CCodec  ( 6928):   int32_t level = 0
+D/CCodec  ( 6928):   int32_t max-input-size = 8192
+D/CCodec  ( 6928):   int32_t max-output-channel-count = 8
+D/CCodec  ( 6928):   string mime = "audio/mp4a-latm"
+D/CCodec  ( 6928):   int32_t profile = 2
+D/CCodec  ( 6928):   int32_t sample-rate = 44100
+D/CCodec  ( 6928): }
+D/CCodec  ( 6928): setup formats output: AMessage(what = 0x00000000) = {
+D/CCodec  ( 6928):   int32_t aac-drc-album-mode = 0
+D/CCodec  ( 6928):   int32_t aac-drc-boost-level = 127
+D/CCodec  ( 6928):   int32_t aac-drc-cut-level = 127
+D/CCodec  ( 6928):   int32_t aac-drc-effect-type = 3
+D/CCodec  ( 6928):   int32_t aac-drc-output-loudness = -1
+D/CCodec  ( 6928):   int32_t aac-encoded-target-level = -1
+D/CCodec  ( 6928):   int32_t aac-max-output-channel_count = 8
+D/CCodec  ( 6928):   int32_t aac-target-ref-level = 64
+D/CCodec  ( 6928):   int32_t buffer-batch-max-output-size = 0
+D/CCodec  ( 6928):   int32_t buffer-batch-threshold-output-size = 0
+D/CCodec  ( 6928):   int32_t channel-count = 2
+D/CCodec  ( 6928):   int32_t channel-mask = 0
+D/CCodec  ( 6928):   int32_t max-output-channel-count = 8
+D/CCodec  ( 6928):   string mime = "audio/raw"
+D/CCodec  ( 6928):   int32_t sample-rate = 44100
+D/CCodec  ( 6928):   int32_t android._config-pcm-encoding = 2
+D/CCodec  ( 6928): }
+I/CCodecConfig( 6928): query failed after returning 21 values (BAD_INDEX)
+D/MediaCodec( 6928): keep callback message for reclaim
+W/Codec2Client( 6928): query -- param skipped: index = 1342179345.
+W/Codec2Client( 6928): query -- param skipped: index = 2415921170.
+W/Codec2Client( 6928): query -- param skipped: index = 1610614798.
+D/CCodecBufferChannel( 6928): [c2.android.aac.decoder#268] Created input block pool with allocatorID 16 => poolID 22 - OK (0)
+I/CCodecBufferChannel( 6928): [c2.android.aac.decoder#268] Created output block pool with allocatorID 16 => poolID 54 - OK
+D/CCodecBufferChannel( 6928): [c2.android.aac.decoder#268] Configured output block pool ids 54 => OK
+D/CCodecConfig( 6928): c2 config diff is   c2::u32 raw.crop.height = 1920
+D/CCodecConfig( 6928):   c2::u32 raw.crop.left = 0
+D/CCodecConfig( 6928):   c2::u32 raw.crop.top = 0
+D/CCodecConfig( 6928):   c2::u32 raw.crop.width = 1080
+D/CCodecConfig( 6928): c2 config diff is   c2::u32 raw.channel-mask.value = 12
+D/CCodecBuffers( 6928): [c2.android.aac.decoder#268:Output[N]] popFromStashAndRegister: at 1000000000000us, output format changed to AMessage(what = 0x00000000) = {
+D/CCodecBuffers( 6928):   int32_t aac-drc-album-mode = 0
+D/CCodecBuffers( 6928):   int32_t aac-drc-boost-level = 127
+D/CCodecBuffers( 6928):   int32_t aac-drc-cut-level = 127
+D/CCodecBuffers( 6928):   int32_t aac-drc-effect-type = 3
+D/CCodecBuffers( 6928):   int32_t aac-drc-output-loudness = -1
+D/CCodecBuffers( 6928):   int32_t aac-encoded-target-level = -1
+D/CCodecBuffers( 6928):   int32_t aac-max-output-channel_count = 8
+D/CCodecBuffers( 6928):   int32_t aac-target-ref-level = 64
+D/CCodecBuffers( 6928):   int32_t buffer-batch-max-output-size = 0
+D/CCodecBuffers( 6928):   int32_t buffer-batch-threshold-output-size = 0
+D/CCodecBuffers( 6928):   int32_t channel-count = 2
+D/CCodecBuffers( 6928):   int32_t channel-mask = 12
+D/CCodecBuffers( 6928):   int32_t max-output-channel-count = 8
+D/CCodecBuffers( 6928):   string mime = "audio/raw"
+D/CCodecBuffers( 6928):   int32_t sample-rate = 44100
+D/CCodecBuffers( 6928):   int32_t android._config-pcm-encoding = 2
+D/CCodecBuffers( 6928): }
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf51d7128 : 0(0 size) total buffers - 0(0 size) used buffers - 21/28 (recycle/alloc) - 8/28 (fetch/transfer)
+D/BufferPoolAccessor2.0( 6928): evictor expired: 1, evicted: 1
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf52095e8 : 5(40960 size) total buffers - 3(24576 size) used buffers - 25/30 (recycle/alloc) - 10/28 (fetch/transfer)
+D/BufferPoolAccessor2.0( 6928): evictor expired: 2, evicted: 0
+D/BufferPoolAccessor2.0( 6928): bufferpool2 0xb400007cf5245c88 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 18/24 (recycle/alloc) - 8/24 (fetch/transfer)
+D/BufferPoolAccessor2.0( 6928): evictor expired: 1, evicted: 1
+D/BufferPoolAccessor2.0( 6928): evictor expired: 1, evicted: 1
