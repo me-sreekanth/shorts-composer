@@ -57,6 +57,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     super.dispose();
   }
 
+  // Method to pick an MP3 file using File Picker
   void _pickVoiceover(int index) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -69,6 +70,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     }
   }
 
+  // Method to generate the voiceover, save the file, and play it
   Future<void> _generateVoiceover(int index) async {
     setState(() {
       _isLoading = true;
@@ -77,13 +79,14 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
 
     try {
       final scene = widget.scenes[index];
-      final voiceoverUrl = await widget.apiService
+      // Generate voiceover and get the file URL or path
+      final voiceoverFilePath = await widget.apiService
           .generateVoiceover(scene.text, scene.sceneNumber);
-      if (voiceoverUrl != null) {
-        final localVoiceoverPath = await widget.apiService
-            .downloadImage(voiceoverUrl, scene.sceneNumber);
-        widget.onVoiceoverSelected(index, localVoiceoverPath, isLocal: true);
-        await _audioPlayers[index].setFilePath(localVoiceoverPath);
+
+      if (voiceoverFilePath != null) {
+        widget.onVoiceoverSelected(index, voiceoverFilePath, isLocal: true);
+        await _audioPlayers[index]
+            .setFilePath(voiceoverFilePath); // Set the voiceover to the player
       } else {
         _showError('Failed to generate voiceover.');
       }

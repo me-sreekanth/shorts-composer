@@ -92,33 +92,47 @@ class ApiService {
   }
 
   Future<String?> generateVoiceover(String text, int sceneNumber) async {
+    // Define the request data (just the 'text' as per the working cURL request)
     final data = {
       'text': text,
-      'voice': 'Adam',
-      'model_id': 'eleven_monolingual_v1',
-      'voice_settings': {
-        'stability': 0,
-        'similarity_boost': 0,
-        'style': 0,
-        'use_speaker_boost': true,
-      },
     };
 
+    // Perform the POST request to the correct endpoint with the voice ID
     final response = await http.post(
       Uri.parse(
-          '${Config.voiceoverGenerationApiUrl}?optimize_streaming_latency=0&output_format=mp3_44100_128'),
+          '${Config.voiceoverGenerationApiUrl}/${Config.voiceoverVoiceId}'),
       headers: {
-        'Authorization': 'Bearer ${Config.voiceoverGenerationToken}',
+        'xi-api-key': Config.voiceoverGenerationToken,
         'Content-Type': 'application/json',
       },
       body: jsonEncode(data),
     );
 
+    print('Request Body: ${jsonEncode(data)}');
+    print('Response Status Code: ${response.statusCode}');
+
     if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      return responseData['data']['url'];
+      // Save the response body (binary data) as an MP3 file
+      try {
+        // Get a directory to store the file
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/scene_$sceneNumber.mp3';
+
+        // Write the response body as bytes to the file
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+
+        print('MP3 file saved at: $filePath');
+
+        // Return the file path so that it can be played or used later
+        return filePath;
+      } catch (e) {
+        print('Error saving MP3 file: $e');
+        return null;
+      }
     } else {
       print('Error: ${response.reasonPhrase}');
+      print('Error Body: ${response.body}');
       return null;
     }
   }
