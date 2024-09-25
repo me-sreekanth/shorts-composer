@@ -1,17 +1,17 @@
 import 'dart:convert';
-
 import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/services.dart'; // For loading assets
 import 'package:shorts_composer/models/scene.dart';
 
 class VideoService {
   String? backgroundMusicPath;
   String? subtitlesPath;
-  String? watermarkPath; // Add a watermarkPath for the selected watermark
+  String? watermarkPath;
 
   bool _doesFileExist(String path) {
     File file = File(path);
@@ -24,7 +24,6 @@ class VideoService {
     return exists;
   }
 
-// Simplified FFmpeg command to get the audio duration in raw format
   Future<double> _getAudioDuration(String audioPath) async {
     final audioPlayer = AudioPlayer();
     try {
@@ -51,9 +50,7 @@ class VideoService {
         "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d={duration}:s=1080x1920",
       ];
 
-      // Prepare the commands to generate video clips from scenes
       for (var scene in scenes) {
-        // Check if the process has been canceled
         if (isCanceled) {
           print('Video generation canceled.');
           return null;
@@ -64,48 +61,50 @@ class VideoService {
         final outputPath = '$tempDir/${scene.sceneNumber}-scene.mp4';
         scene.updateVideoPath(outputPath);
 
-        // Get the actual duration of the voiceover
         double audioDuration = await _getAudioDuration(audioPath);
         print(
             'Voiceover duration for scene ${scene.sceneNumber}: $audioDuration');
 
-        // Select a random effect for the scene
         final selectedEffect = effects[random.nextInt(effects.length)]
             .replaceAll("{duration}", (audioDuration * 25).toString());
 
-        // Watermark handling
         String watermarkFilter = '';
         if (watermarkPath != null) {
           watermarkFilter = "[2:v]scale=iw*1.5:-1[wm];[bg][wm]overlay=160:160";
         }
 
-        // FFmpeg command to generate video clips with voiceover, animation, and watermark
         final ffmpegCommand = [
           '-y',
-          '-loop', '1', // Loop the image
-          '-i', imagePath, // Input image (scene)
-          '-i', audioPath, // Input audio (voiceover)
-          '-i', watermarkPath ?? 'null', // Input watermark image (optional)
+          '-loop',
+          '1',
+          '-i',
+          imagePath,
+          '-i',
+          audioPath,
+          '-i',
+          watermarkPath ?? 'null',
           '-filter_complex',
-          "[0:v]$selectedEffect[bg];" +
-              watermarkFilter, // Overlay watermark with specified margins
-          '-c:v', 'libx264', // Video codec
-          '-pix_fmt', 'yuv420p', // Pixel format
-          '-c:a', 'aac', // Audio codec
-          '-b:a', '192k', // Audio bitrate
-          '-shortest', // Stops at the shortest stream (audio or video)
-          '-t', audioDuration.toString(), // Set video duration to match audio
+          "[0:v]$selectedEffect[bg];" + watermarkFilter,
+          '-c:v',
+          'libx264',
+          '-pix_fmt',
+          'yuv420p',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '192k',
+          '-shortest',
+          '-t',
+          audioDuration.toString(),
           outputPath
         ];
 
         print(
             'Executing FFmpeg command for scene ${scene.sceneNumber}: $ffmpegCommand');
 
-        // Execute FFmpeg command
         var session = await FFmpegKit.execute(ffmpegCommand.join(' '));
         var returnCode = await session.getReturnCode();
 
-        // Check the result of the command
         if (ReturnCode.isSuccess(returnCode)) {
           print('FFmpeg command succeeded.');
         } else {
@@ -115,7 +114,6 @@ class VideoService {
         }
       }
 
-      // Concatenate the clips into a single video
       final concatFilePath = '$tempDir/concat.txt';
       final outputVideoPath = '$tempDir/final_video.mp4';
       final File concatFile = File(concatFilePath);
@@ -151,22 +149,25 @@ class VideoService {
         throw Exception('Error concatenating video files');
       }
 
-      // Mix background music with the concatenated video
-// Mix background music with the concatenated video
       String finalVideoPath = outputVideoPath;
       if (backgroundMusicPath != null) {
         final finalOutputPath = '$tempDir/final_video_with_music.mp4';
 
         final mixCommand = [
           '-y',
-          '-i', outputVideoPath, // Input video with voiceover audio
-          '-i', backgroundMusicPath!, // Input background music
+          '-i',
+          outputVideoPath,
+          '-i',
+          backgroundMusicPath!,
           '-filter_complex',
           '[1:a]volume=0.3[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2',
-          '-map', '0:v', // Map video from the first input (outputVideoPath)
-          '-c:v', 'copy', // Copy video without re-encoding
-          '-c:a', 'aac', // Re-encode audio to AAC
-          '-shortest', // Set duration to the shortest input
+          '-map',
+          '0:v',
+          '-c:v',
+          'copy',
+          '-c:a',
+          'aac',
+          '-shortest',
           finalOutputPath
         ];
 
@@ -181,19 +182,38 @@ class VideoService {
         finalVideoPath = finalOutputPath;
       }
 
-// Apply subtitles to the final video if available
-      if (subtitlesPath != null) {
+      // Apply subtitles to the final video if available
+      if (subtitlesPath != null && _doesFileExist(subtitlesPath!)) {
         final subtitleOutputPath = '$tempDir/final_video_with_subs.mp4';
 
+        // Copy the .ass file to internal storage
+        String subtitlesInternalPath =
+            '${directory.path}/generated_subtitles.ass';
+        final File subtitlesFile = File(subtitlesPath!);
+        await subtitlesFile.copy(subtitlesInternalPath);
+
+        // Load the font from the assets
+        final fontData = await rootBundle.load('lib/assets/Verdana.ttf');
+        final fontPath = '${(await getTemporaryDirectory()).path}/Verdana.ttf';
+        final fontFile = File(fontPath);
+        await fontFile.writeAsBytes(fontData.buffer.asUint8List());
+
+        // Use the font with the subtitle command
         final subtitleCommand = [
           '-y',
-          '-i', finalVideoPath,
-          '-vf', 'ass=$subtitlesPath',
-          '-c:v', 'libx264', // Re-encoding to ensure subtitle filter works
-          '-c:a', 'aac',
-          '-b:a', '192k',
+          '-i',
+          finalVideoPath,
+          '-vf',
+          'ass=${subtitlesInternalPath}:fontsdir=${fontFile.parent.path}',
+          '-c:v',
+          'libx264',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '192k',
           subtitleOutputPath
         ];
+        print('Subtitle path: $subtitlesInternalPath');
 
         print('Executing FFmpeg subtitle command: $subtitleCommand');
 
@@ -208,9 +228,11 @@ class VideoService {
           print('FFmpeg subtitle command failed');
           throw Exception('Error applying subtitles');
         }
+      } else {
+        print("No subtitles to apply or subtitle file does not exist.");
       }
 
-      return finalVideoPath; // In case subtitles were not applied, return the final video with music
+      return finalVideoPath;
     } catch (e) {
       print('Exception during video creation: $e');
       throw Exception('Error creating video: $e');

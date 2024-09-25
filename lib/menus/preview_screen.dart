@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:gallery_saver/gallery_saver.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PreviewScreen extends StatefulWidget {
   final String videoPath;
@@ -66,43 +67,44 @@ class _PreviewScreenState extends State<PreviewScreen> {
     });
   }
 
-  Future<void> _saveVideoToDocuments(String videoPath) async {
+  // Open file picker for selecting folder or destination on Android
+  Future<void> _pickSaveLocationAndSaveVideo(String videoPath) async {
     try {
-      Directory? directory;
-
       if (Platform.isAndroid) {
-        directory =
-            await getExternalStorageDirectory(); // Android's external storage
+        String? selectedDirectory =
+            await FilePicker.platform.getDirectoryPath();
+        if (selectedDirectory != null) {
+          String newFilePath = '$selectedDirectory/final_video_with_subs.mp4';
+          final File newFile = File(videoPath);
+          await newFile.copy(newFilePath);
+
+          print('Video successfully saved to: $newFilePath');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Video saved to $newFilePath')),
+          );
+
+          // Open the video using the platform's default video player
+          OpenFilex.open(newFilePath).then((result) {
+            if (result.type != ResultType.done) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to open video file')),
+              );
+            }
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No folder selected')),
+          );
+        }
       } else if (Platform.isIOS) {
-        directory =
-            await getApplicationDocumentsDirectory(); // iOS Documents directory
-      }
-
-      if (directory != null) {
-        String newFilePath = '${directory.path}/final_video_with_subs.mp4';
-        final File newFile = File(videoPath);
-        await newFile.copy(newFilePath);
-
-        print('Video successfully saved to Documents folder: $newFilePath');
-
-        // Open the video using the platform's default video player
-        OpenFilex.open(newFilePath).then((result) {
-          if (result.type != ResultType.done) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to open video file')),
-            );
-          }
-        });
-      } else {
-        print("Failed to access the directory.");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to access the directory')),
-        );
+        // On iOS, use the Share API for the user to choose where to save
+        await Share.shareXFiles([XFile(videoPath)],
+            text: 'Save the video file');
       }
     } catch (e) {
-      print('Error saving video to Documents: $e');
+      print('Error saving video: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving video to Documents')),
+        SnackBar(content: Text('Error saving video')),
       );
     }
   }
@@ -115,7 +117,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.download),
-            onPressed: () => _saveVideoToDocuments(widget.videoPath),
+            onPressed: () => _pickSaveLocationAndSaveVideo(widget.videoPath),
           ),
         ],
       ),

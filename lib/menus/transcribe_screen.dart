@@ -88,18 +88,41 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     try {
       String jsonString =
           await rootBundle.loadString('lib/assets/response_transcription.json');
-      if (jsonString.isNotEmpty) {
-        Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-        String assFilePath = await _createAssFileFromJson(jsonMap);
-        setState(() {
-          _assFileName = p.basename(assFilePath);
-          widget.onAssFileSelected(assFilePath);
-        });
-      } else {
-        _showError('Transcription JSON content is empty.');
+
+      // Ensure JSON is loaded
+      if (jsonString.isEmpty) {
+        _showError('Error: Transcription JSON file is empty');
+        return;
       }
+
+      print('Transcription JSON file loaded successfully.');
+
+      // Parse JSON
+      Map<String, dynamic> jsonMap;
+      try {
+        jsonMap = jsonDecode(jsonString);
+        print("Transcription JSON parsed successfully.");
+      } catch (e) {
+        _showError('Error parsing transcription JSON: $e');
+        return;
+      }
+
+      // Check for valid words data
+      if (!jsonMap.containsKey('words') || jsonMap['words'].isEmpty) {
+        _showError("Error: 'words' data is missing or empty in the JSON.");
+        return;
+      }
+
+      print("Words data exists and is valid.");
+
+      // Create and write to ASS file
+      String assFilePath = await _createAssFileFromJson(jsonMap);
+      setState(() {
+        _assFileName = p.basename(assFilePath);
+        widget.onAssFileSelected(assFilePath);
+      });
     } catch (e) {
-      _showError('An error occurred while generating the ASS file.');
+      _showError('An error occurred while generating the ASS file: $e');
       print(e);
     } finally {
       setState(() {
@@ -109,9 +132,26 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
   }
 
   Future<String> _createAssFileFromJson(Map<String, dynamic> jsonMap) async {
-    final Directory directory = await getApplicationDocumentsDirectory();
-    final String tempDir = directory.path;
-    final String assFilePath = '$tempDir/generated_subtitles.ass';
+    Directory? directory;
+
+    // Android specific: Use external storage
+    if (Platform.isAndroid) {
+      directory =
+          await getExternalStorageDirectory(); // External storage directory
+    } else if (Platform.isIOS) {
+      directory =
+          await getApplicationDocumentsDirectory(); // iOS Documents directory
+    }
+
+    final String folderName = "ShortsComposer";
+    final Directory appDir = Directory('${directory!.path}/$folderName');
+
+    // Create directory if it doesn't exist
+    if (!(await appDir.exists())) {
+      await appDir.create(recursive: true);
+    }
+
+    final String assFilePath = '${appDir.path}/generated_subtitles.ass';
     final File assFile = File(assFilePath);
     IOSink sink = assFile.openWrite();
 
@@ -124,9 +164,8 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     final int outlineThickness = 20; // Thin outline to simulate border
     final int shadowThickness = 20; // Shadow to simulate curved edges
     final int alignment = 2; // Bottom-center
-    final int bold = -1; // -1 means bold text
-    final int verticalMargin =
-        100; // Adjust this to position slightly below the center
+    final int bold = -1;
+    final int verticalMargin = 100;
 
     // Write [Script Info] section
     sink.writeln('[Script Info]');
@@ -136,36 +175,32 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     sink.writeln('PlayDepth: 0');
     sink.writeln('Timer: 100.0000');
 
-    // Write [V4+ Styles] section using customizable variables with `BorderStyle` 3 to create a background box
+    // Write [V4+ Styles] section
     sink.writeln('[V4+ Styles]');
     sink.writeln(
         'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding');
-
     sink.writeln(
         'Style: Default,$fontName,$fontSize,$primaryColor,$primaryColor,$outlineColor,$backColor,$bold,0,0,0,100,100,0,0,3,$outlineThickness,$shadowThickness,$alignment,10,10,$verticalMargin,1');
-    // - `Alignment=2` ensures the text is horizontally centered below the centerline.
-    // - `MarginV=$verticalMargin` controls the vertical distance from the middle of the screen.
 
     // Write [Events] section
     sink.writeln('[Events]');
     sink.writeln(
         'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text');
 
-    // Write each word as a dialogue with center alignment just below the center
+    // Write each word as a dialogue
     for (var word in jsonMap['words']) {
       String start = _formatTime(word['start']);
       String end = _formatTime(word['end']);
-
-      // Convert each word to uppercase
       String text = word['word'].replaceAll('\n', ' ').toUpperCase();
 
-      // Add \an2 to center the text horizontally, below the centerline
+      print('Writing subtitle: Start: $start, End: $end, Text: $text');
       sink.writeln(
           'Dialogue: 0,${start},${end},Default,,0,0,$verticalMargin,,{\an2}${text}');
     }
 
     await sink.close();
-    print('ASS file created: $assFilePath');
+    print(
+        'ASS file created. Path: $assFilePath, Size: ${assFile.lengthSync()} bytes');
     return assFilePath;
   }
 
@@ -174,7 +209,6 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     int minutes = (time % 3600) ~/ 60;
     int seconds = (time % 60).toInt();
     int milliseconds = ((time % 1) * 100).toInt();
-
     return '${hours.toString().padLeft(1, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${milliseconds.toString().padLeft(2, '0')}';
   }
 
