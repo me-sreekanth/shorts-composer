@@ -193,8 +193,8 @@ class VideoService {
         await subtitlesFile.copy(subtitlesInternalPath);
 
         // Load the font from the assets
-        final fontData = await rootBundle.load('lib/assets/Verdana.ttf');
-        final fontPath = '${(await getTemporaryDirectory()).path}/Verdana.ttf';
+        final fontData = await rootBundle.load('lib/assets/impact.ttf');
+        final fontPath = '${(await getTemporaryDirectory()).path}/impact.ttf';
         final fontFile = File(fontPath);
         await fontFile.writeAsBytes(fontData.buffer.asUint8List());
 

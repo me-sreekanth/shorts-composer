@@ -39,4 +39,5 @@ flutter:
 
   assets:
     - lib/assets/response_transcription.json
+    - lib/assets/impact.ttf
     - lib/assets/Verdana.ttf

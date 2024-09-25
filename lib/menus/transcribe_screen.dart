@@ -156,8 +156,8 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     IOSink sink = assFile.openWrite();
 
     // Customizable variables
-    final String fontName = "Verdana";
-    final int fontSize = 16;
+    final String fontName = "impact";
+    final int fontSize = 20;
     final String primaryColor = "&H00FFFFFF"; // White text
     final String backColor = "&H0000FFFF"; // Semi-transparent yellow background
     final String outlineColor = "&H00000000"; // Black outline
