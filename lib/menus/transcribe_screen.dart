@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
 
 class TranscribeScreen extends StatefulWidget {
   final Function(String) onMusicSelected;
@@ -26,6 +26,7 @@ class TranscribeScreen extends StatefulWidget {
 
 class _TranscribeScreenState extends State<TranscribeScreen> {
   String? _backgroundMusicFileName;
+  String? _audioFilePath;
   String? _assFileName;
   bool _isLoading = false;
 
@@ -36,7 +37,8 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     _assFileName = widget.assFileName;
   }
 
-  void _pickBackgroundMusic() async {
+  // Store background music in the "ShortsComposer" folder
+  Future<void> _pickBackgroundMusic() async {
     setState(() {
       _isLoading = true;
     });
@@ -47,10 +49,27 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     );
 
     if (result != null && result.files.single.path != null) {
-      setState(() {
-        _backgroundMusicFileName = p.basename(result.files.single.path!);
-        widget.onMusicSelected(result.files.single.path!);
-      });
+      String pickedFilePath = result.files.single.path!;
+      Directory? directory = await _getStorageDirectory();
+
+      if (directory != null) {
+        String folderName = "ShortsComposer";
+        Directory appDir = Directory('${directory.path}/$folderName');
+        if (!(await appDir.exists())) {
+          await appDir.create(recursive: true);
+        }
+
+        String newFilePath = '${appDir.path}/${p.basename(pickedFilePath)}';
+        File file = File(pickedFilePath);
+        await file.copy(newFilePath);
+
+        setState(() {
+          _backgroundMusicFileName = p.basename(newFilePath);
+          widget.onMusicSelected(newFilePath);
+        });
+
+        print('Stored background music at: $newFilePath');
+      }
     }
 
     setState(() {
@@ -58,20 +77,21 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     });
   }
 
-  void _pickAssFile() async {
+  // Pick audio file for transcription
+  Future<void> _pickAudioFile() async {
     setState(() {
       _isLoading = true;
     });
 
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['ass'],
+      allowedExtensions: ['mp3', 'wav'],
     );
 
     if (result != null && result.files.single.path != null) {
       setState(() {
-        _assFileName = p.basename(result.files.single.path!);
-        widget.onAssFileSelected(result.files.single.path!);
+        _audioFilePath = result.files.single.path;
+        print('Selected audio file path: $_audioFilePath');
       });
     }
 
@@ -80,50 +100,60 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     });
   }
 
-  Future<void> _generateAssFile() async {
+  // Send file to Deepgram and generate .ASS file
+  Future<void> _transcribeAudio() async {
+    if (_audioFilePath == null) {
+      print('No audio file selected');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      String jsonString =
-          await rootBundle.loadString('lib/assets/response_transcription.json');
-
-      // Ensure JSON is loaded
-      if (jsonString.isEmpty) {
-        _showError('Error: Transcription JSON file is empty');
+      String contentType;
+      if (_audioFilePath!.endsWith('.mp3')) {
+        contentType = 'audio/mpeg';
+      } else if (_audioFilePath!.endsWith('.wav')) {
+        contentType = 'audio/wav';
+      } else {
+        print('Unsupported file type');
         return;
       }
 
-      print('Transcription JSON file loaded successfully.');
+      File file = File(_audioFilePath!);
+      List<int> fileBytes = await file.readAsBytes();
 
-      // Parse JSON
-      Map<String, dynamic> jsonMap;
-      try {
-        jsonMap = jsonDecode(jsonString);
-        print("Transcription JSON parsed successfully.");
-      } catch (e) {
-        _showError('Error parsing transcription JSON: $e');
-        return;
+      Uri url = Uri.parse(
+          'https://api.deepgram.com/v1/listen?smart_format=true&model=nova-2&language=en-IN');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Token 03dba774090bd9452500c57e664d0d5b99f93fd5',
+          'Content-Type': contentType,
+        },
+        body: fileBytes,
+      );
+
+      print('Response status code: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseBody = jsonDecode(response.body);
+        List<dynamic> words =
+            responseBody['results']['channels'][0]['alternatives'][0]['words'];
+        String assFilePath = await _createAssFileFromApi(words);
+        setState(() {
+          _assFileName = p.basename(assFilePath);
+          widget.onAssFileSelected(assFilePath);
+        });
+      } else {
+        print('Error: ${response.body}');
+        _showError('Error: ${response.body}');
       }
-
-      // Check for valid words data
-      if (!jsonMap.containsKey('words') || jsonMap['words'].isEmpty) {
-        _showError("Error: 'words' data is missing or empty in the JSON.");
-        return;
-      }
-
-      print("Words data exists and is valid.");
-
-      // Create and write to ASS file
-      String assFilePath = await _createAssFileFromJson(jsonMap);
-      setState(() {
-        _assFileName = p.basename(assFilePath);
-        widget.onAssFileSelected(assFilePath);
-      });
     } catch (e) {
-      _showError('An error occurred while generating the ASS file: $e');
-      print(e);
+      _showError('An error occurred: $e');
+      print('Exception: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -131,22 +161,13 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     }
   }
 
-  Future<String> _createAssFileFromJson(Map<String, dynamic> jsonMap) async {
-    Directory? directory;
-
-    // Android specific: Use external storage
-    if (Platform.isAndroid) {
-      directory =
-          await getExternalStorageDirectory(); // External storage directory
-    } else if (Platform.isIOS) {
-      directory =
-          await getApplicationDocumentsDirectory(); // iOS Documents directory
-    }
+  // Store .ASS file in the "ShortsComposer" folder
+  Future<String> _createAssFileFromApi(List<dynamic> words) async {
+    Directory? directory = await _getStorageDirectory();
 
     final String folderName = "ShortsComposer";
     final Directory appDir = Directory('${directory!.path}/$folderName');
 
-    // Create directory if it doesn't exist
     if (!(await appDir.exists())) {
       await appDir.create(recursive: true);
     }
@@ -155,19 +176,17 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     final File assFile = File(assFilePath);
     IOSink sink = assFile.openWrite();
 
-    // Customizable variables
     final String fontName = "impact";
     final int fontSize = 20;
-    final String primaryColor = "&H00FFFFFF"; // White text
-    final String backColor = "&H0000FFFF"; // Semi-transparent yellow background
-    final String outlineColor = "&H00000000"; // Black outline
-    final int outlineThickness = 20; // Thin outline to simulate border
-    final int shadowThickness = 20; // Shadow to simulate curved edges
-    final int alignment = 2; // Bottom-center
+    final String primaryColor = "&H00FFFFFF";
+    final String backColor = "&H0000FFFF";
+    final String outlineColor = "&H00000000";
+    final int outlineThickness = 20;
+    final int shadowThickness = 20;
+    final int alignment = 2;
     final int bold = -1;
     final int verticalMargin = 100;
 
-    // Write [Script Info] section
     sink.writeln('[Script Info]');
     sink.writeln('Title: Transcription');
     sink.writeln('ScriptType: v4.00+');
@@ -175,23 +194,20 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     sink.writeln('PlayDepth: 0');
     sink.writeln('Timer: 100.0000');
 
-    // Write [V4+ Styles] section
     sink.writeln('[V4+ Styles]');
     sink.writeln(
         'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding');
     sink.writeln(
         'Style: Default,$fontName,$fontSize,$primaryColor,$primaryColor,$outlineColor,$backColor,$bold,0,0,0,100,100,0,0,3,$outlineThickness,$shadowThickness,$alignment,10,10,$verticalMargin,1');
 
-    // Write [Events] section
     sink.writeln('[Events]');
     sink.writeln(
         'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text');
 
-    // Write each word as a dialogue
-    for (var word in jsonMap['words']) {
+    for (var word in words) {
       String start = _formatTime(word['start']);
       String end = _formatTime(word['end']);
-      String text = word['word'].replaceAll('\n', ' ').toUpperCase();
+      String text = word['punctuated_word'].replaceAll('\n', ' ').toUpperCase();
 
       print('Writing subtitle: Start: $start, End: $end, Text: $text');
       sink.writeln(
@@ -202,6 +218,15 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     print(
         'ASS file created. Path: $assFilePath, Size: ${assFile.lengthSync()} bytes');
     return assFilePath;
+  }
+
+  Future<Directory?> _getStorageDirectory() async {
+    if (Platform.isAndroid) {
+      return await getExternalStorageDirectory();
+    } else if (Platform.isIOS) {
+      return await getApplicationDocumentsDirectory();
+    }
+    return null;
   }
 
   String _formatTime(double time) {
@@ -229,19 +254,21 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
           children: [
             if (_backgroundMusicFileName != null)
               Text('Selected background music: $_backgroundMusicFileName'),
-            if (_assFileName != null) Text('Selected ASS file: $_assFileName'),
+            if (_audioFilePath != null)
+              Text('Selected audio file: ${p.basename(_audioFilePath!)}'),
+            if (_assFileName != null) Text('Generated ASS file: $_assFileName'),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _pickBackgroundMusic,
               child: Text('Pick Background Music'),
             ),
             ElevatedButton(
-              onPressed: _pickAssFile,
-              child: Text('Pick ASS File'),
+              onPressed: _pickAudioFile,
+              child: Text('Pick Audio File (MP3/WAV)'),
             ),
             ElevatedButton(
-              onPressed: _generateAssFile,
-              child: Text('Generate ASS File'),
+              onPressed: _transcribeAudio,
+              child: Text('Generate ASS from Deepgram'),
             ),
             if (_isLoading) CircularProgressIndicator(),
           ],

@@ -28,6 +28,7 @@ dependencies:
   sprintf: ^6.0.0
   open_filex: ^4.2.0
   share_plus: ^10.0.2
+  http_parser: ^4.0.2
 
 dev_dependencies:
   flutter_test:
