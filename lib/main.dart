@@ -211,10 +211,21 @@ class _AppBodyState extends State<AppBody> {
         return VoiceoversScreen(
           scenes: _scenes,
           apiService: _apiService,
+
+          // Handle the generated .ass file and update _assFilePath
+          onAssFileGenerated: (String assFilePath) {
+            setState(() {
+              _assFilePath = assFilePath;
+            });
+            print('ASS File Generated: $assFilePath');
+          },
+
+          // Handle voiceover selection
           onVoiceoverSelected: (index, voiceoverUrl, {isLocal = false}) {
             setState(() {
               _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
             });
+            print('Voiceover selected for scene $index: $voiceoverUrl');
           },
         );
       case 2:

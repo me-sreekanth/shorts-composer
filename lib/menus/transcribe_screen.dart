@@ -131,7 +131,7 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
       final response = await http.post(
         url,
         headers: {
-          'Authorization': 'Token 03dba774090bd9452500c57e664d0d5b99f93fd5',
+          'Authorization': 'Token 93428f9f5eebe66f5cbf598a51e8549793d76eb3',
           'Content-Type': contentType,
         },
         body: fileBytes,

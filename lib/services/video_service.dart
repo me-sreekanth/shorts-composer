@@ -150,17 +150,61 @@ class VideoService {
       }
 
       String finalVideoPath = outputVideoPath;
+
+      // Apply subtitles to the final video if available
+      if (subtitlesPath != null && _doesFileExist(subtitlesPath!)) {
+        final subtitleOutputPath = '$tempDir/final_video_with_subs.mp4';
+
+        // Ensure the .ass file is in the correct location
+        final fontData = await rootBundle.load('lib/assets/impact.ttf');
+        final fontPath = '${directory.path}/impact.ttf';
+        await File(fontPath).writeAsBytes(fontData.buffer.asUint8List());
+
+        final subtitleCommand = [
+          '-y',
+          '-i',
+          finalVideoPath,
+          '-vf',
+          'ass=${subtitlesPath}:fontsdir=${directory.path}', // Reference the subtitlesPath and font
+          '-c:v',
+          'libx264',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '192k',
+          subtitleOutputPath
+        ];
+
+        print('Subtitle path: $subtitlesPath');
+        print('Executing FFmpeg subtitle command: $subtitleCommand');
+
+        var subtitleSession =
+            await FFmpegKit.execute(subtitleCommand.join(' '));
+        var subtitleReturnCode = await subtitleSession.getReturnCode();
+
+        if (ReturnCode.isSuccess(subtitleReturnCode)) {
+          print('FFmpeg subtitle command succeeded.');
+          finalVideoPath = subtitleOutputPath;
+        } else {
+          print('FFmpeg subtitle command failed');
+          throw Exception('Error applying subtitles');
+        }
+      } else {
+        print("No subtitles to apply or subtitle file does not exist.");
+      }
+
+      // **Mix background music if it's available**
       if (backgroundMusicPath != null) {
         final finalOutputPath = '$tempDir/final_video_with_music.mp4';
 
         final mixCommand = [
           '-y',
           '-i',
-          outputVideoPath,
+          finalVideoPath,
           '-i',
           backgroundMusicPath!,
           '-filter_complex',
-          '[1:a]volume=0.3[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2',
+          '[1:a]volume=0.3[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2', // Mixing the background music with voiceover
           '-map',
           '0:v',
           '-c:v',
@@ -180,56 +224,6 @@ class VideoService {
         }
 
         finalVideoPath = finalOutputPath;
-      }
-
-      // Apply subtitles to the final video if available
-      if (subtitlesPath != null && _doesFileExist(subtitlesPath!)) {
-        final subtitleOutputPath = '$tempDir/final_video_with_subs.mp4';
-
-        // Copy the .ass file to internal storage
-        String subtitlesInternalPath =
-            '${directory.path}/generated_subtitles.ass';
-        final File subtitlesFile = File(subtitlesPath!);
-        await subtitlesFile.copy(subtitlesInternalPath);
-
-        // Load the font from the assets
-        final fontData = await rootBundle.load('lib/assets/impact.ttf');
-        final fontPath = '${(await getTemporaryDirectory()).path}/impact.ttf';
-        final fontFile = File(fontPath);
-        await fontFile.writeAsBytes(fontData.buffer.asUint8List());
-
-        // Use the font with the subtitle command
-        final subtitleCommand = [
-          '-y',
-          '-i',
-          finalVideoPath,
-          '-vf',
-          'ass=${subtitlesInternalPath}:fontsdir=${fontFile.parent.path}',
-          '-c:v',
-          'libx264',
-          '-c:a',
-          'aac',
-          '-b:a',
-          '192k',
-          subtitleOutputPath
-        ];
-        print('Subtitle path: $subtitlesInternalPath');
-
-        print('Executing FFmpeg subtitle command: $subtitleCommand');
-
-        var subtitleSession =
-            await FFmpegKit.execute(subtitleCommand.join(' '));
-        var subtitleReturnCode = await subtitleSession.getReturnCode();
-
-        if (ReturnCode.isSuccess(subtitleReturnCode)) {
-          print('FFmpeg subtitle command succeeded.');
-          return subtitleOutputPath;
-        } else {
-          print('FFmpeg subtitle command failed');
-          throw Exception('Error applying subtitles');
-        }
-      } else {
-        print("No subtitles to apply or subtitle file does not exist.");
       }
 
       return finalVideoPath;
