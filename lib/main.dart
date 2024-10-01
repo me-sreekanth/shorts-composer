@@ -9,10 +9,11 @@ import 'package:shorts_composer/services/video_service.dart';
 import 'package:shorts_composer/menus/preview_screen.dart';
 import 'package:shorts_composer/menus/scenes_screen.dart';
 import 'package:shorts_composer/menus/voiceovers_screen.dart';
-import 'package:shorts_composer/menus/transcribe_screen.dart';
+import 'package:shorts_composer/menus/sounds_screen.dart';
 import 'package:shorts_composer/menus/watermarks_screen.dart';
 import 'package:shorts_composer/menus/upload_screen.dart';
 import 'package:path/path.dart' as p;
+import 'package:google_sign_in/google_sign_in.dart';
 
 void main() {
   runApp(App());
@@ -37,10 +38,41 @@ class AppBody extends StatefulWidget {
 }
 
 class _AppBodyState extends State<AppBody> {
+  final ApiService _apiService = ApiService();
+  final VideoService _videoService = VideoService();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: <String>[
+      'email',
+      'https://www.googleapis.com/auth/youtube.upload',
+    ],
+  );
+
+  GoogleSignInAccount? _currentUser; // Google Sign-In state
+  bool _isAuthorized = false; // Track if the user is signed in
+
+  int _selectedIndex = 0;
+  List<Scene> _scenes = [];
+  String? _assFilePath;
+  String? _backgroundMusicPath;
+  String? _watermarkFilePath;
+  String? _videoFilePath; // Store the generated video path
+  String _videoTitle = '';
+  String _videoDescription = '';
+  bool _isLoading = false;
+  bool _isCanceled = false; // Track if the video generation is canceled
+
   @override
   void initState() {
     super.initState();
     _requestPermissions(); // Request permissions when the app starts
+
+    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
+      setState(() {
+        _currentUser = account;
+        _isAuthorized = account != null;
+      });
+    });
+    _googleSignIn.signInSilently();
   }
 
   Future<void> _requestPermissions() async {
@@ -61,19 +93,24 @@ class _AppBodyState extends State<AppBody> {
     }
   }
 
-  final ApiService _apiService = ApiService();
-  final VideoService _videoService = VideoService();
+  // Google Sign-In methods
+  Future<void> _handleSignIn() async {
+    try {
+      await _googleSignIn.signIn();
+    } catch (error) {
+      print('Error signing in: $error');
+    }
+  }
 
-  int _selectedIndex = 0;
-  List<Scene> _scenes = [];
-  String? _assFilePath;
-  String? _backgroundMusicPath;
-  String? _watermarkFilePath;
-  String _videoTitle = '';
-  String _videoDescription = '';
-  bool _isLoading = false;
-  bool _isCanceled = false; // Track if the video generation is canceled
+  Future<void> _handleSignOut() async {
+    await _googleSignIn.disconnect();
+    setState(() {
+      _currentUser = null;
+      _isAuthorized = false;
+    });
+  }
 
+  // Navigation between different menu items
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -114,14 +151,15 @@ class _AppBodyState extends State<AppBody> {
             context); // Dismiss the AlertDialog when video generation is complete
         setState(() {
           _isLoading = false;
+          _videoFilePath = outputPath; // Store the generated video path
         });
-        // Pass the correct videoPath (which should now be the path to the video with subtitles)
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PreviewScreen(
-                videoPath: outputPath,
-                assFilePath: null), // No need to pass assFilePath
+              videoPath: outputPath,
+              assFilePath: null, // No need to pass assFilePath
+            ),
           ),
         );
       } else {
@@ -229,17 +267,11 @@ class _AppBodyState extends State<AppBody> {
           },
         );
       case 2:
-        return TranscribeScreen(
+        return SoundsScreen(
           onMusicSelected: _onMusicSelected,
-          onAssFileSelected: (path) {
-            setState(() {
-              _assFilePath = path;
-            });
-          },
           backgroundMusicFileName: _backgroundMusicPath != null
               ? p.basename(_backgroundMusicPath!)
               : null,
-          assFileName: _assFilePath != null ? p.basename(_assFilePath!) : null,
         );
       case 3:
         return WatermarksScreen(
@@ -250,8 +282,11 @@ class _AppBodyState extends State<AppBody> {
         );
       case 4:
         return UploadScreen(
-          initialTitle: _videoTitle,
-          initialDescription: _videoDescription,
+          generatedVideoPath: _videoFilePath ?? '', // Pass the video path here
+          currentUser: _currentUser, // Pass the authenticated user
+          isAuthenticated: _isAuthorized, // Pass the authentication state
+          onSignIn: _handleSignIn, // Pass sign-in method
+          onSignOut: _handleSignOut, // Pass sign-out method
         );
       default:
         return Center(child: Text("Invalid selection."));

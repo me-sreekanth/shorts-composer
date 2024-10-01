@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "178166877734",
+    "project_id": "shorts-composer-d2b9e",
+    "storage_bucket": "shorts-composer-d2b9e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178166877734:android:22304582f0e17806c1e0e7",
+        "android_client_info": {
+          "package_name": "com.example.shorts_composer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAeLE-eJzomZUBI0MrmFTIYFzhu1-6jaE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

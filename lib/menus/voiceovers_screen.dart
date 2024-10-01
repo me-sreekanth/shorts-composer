@@ -134,7 +134,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       final response = await http.post(
         url,
         headers: {
-          'Authorization': 'Token 08ad4b8839b05c4fe9e7227b3d1fbf825d7068a8',
+          'Authorization': 'Token fe0eb1ac8453eca8797842c6d2a9255ea49a262a',
           'Content-Type': contentType,
         },
         body: fileBytes,
@@ -317,7 +317,17 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
               final player = _audioPlayers[index];
               return Card(
                 child: ListTile(
-                  title: Text(scene.text),
+                  title: TextField(
+                    controller: TextEditingController(text: scene.text),
+                    onChanged: (newText) {
+                      setState(() {
+                        scene.text = newText;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Scene Text',
+                    ),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

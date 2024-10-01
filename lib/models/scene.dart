@@ -1,7 +1,7 @@
 class Scene {
   final int sceneNumber;
   final int duration;
-  final String text;
+  String text;
   String description;
   String? imageUrl;
   bool isLocalImage;
