@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shorts_composer/config.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
 import 'package:just_audio/just_audio.dart';
@@ -134,7 +135,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       final response = await http.post(
         url,
         headers: {
-          'Authorization': 'Token fe0eb1ac8453eca8797842c6d2a9255ea49a262a',
+          'Authorization': 'Token ${Config.transcribeVoiceoversToken}',
           'Content-Type': contentType,
         },
         body: fileBytes,

@@ -14,4 +14,8 @@ class Config {
       'https://api.elevenlabs.io/v1/text-to-speech';
   static const String voiceoverVoiceId =
       'TX3LPaxmHKxFdv7VOQHJ'; // Voice id of Liam
+
+//TRANSCRIBE VOICEOVERS configs
+  static const String transcribeVoiceoversToken =
+      '4ade915f03177332763e13ad27900ae1b1617f7c';
 }
