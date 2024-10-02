@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shorts_composer/models/scene.dart';
-import 'package:open_file/open_file.dart'; // Importing open_file package
+import 'package:open_filex/open_filex.dart'; // Importing open_filex package
 
 class ScenesScreen extends StatefulWidget {
   final List<Scene> scenes;
@@ -108,7 +108,7 @@ class _ScenesScreenState extends State<ScenesScreen> {
 
   // Function to open the picked or generated image in the gallery
   void _openImage(String imagePath) {
-    OpenFile.open(imagePath);
+    OpenFilex.open(imagePath); // Using open_filex instead of open_file
   }
 
   @override
