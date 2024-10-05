@@ -33,6 +33,10 @@ class _UploadScreenState extends State<UploadScreen> {
   File? _selectedVideoFile;
   String? _videoUrl;
   VideoPlayerController? _videoController;
+  bool _isUploading = false; // Track upload progress
+  final _titleController = TextEditingController(); // Title input
+  final _descriptionController = TextEditingController(); // Description input
+  final _formKey = GlobalKey<FormState>(); // Form key for validation
 
   @override
   void initState() {
@@ -66,42 +70,51 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   Future<void> _uploadVideoToYouTube() async {
-    if (_selectedVideoFile != null && widget.currentUser != null) {
-      final authHeaders = await widget.currentUser!.authHeaders;
-      final client = AuthenticatedClient(http.Client(), authHeaders);
-      youtube.YouTubeApi youtubeApi = youtube.YouTubeApi(client);
-
-      var video = youtube.Video();
-      video.snippet = youtube.VideoSnippet()
-        ..title = "Generated Video"
-        ..description = "Uploaded from Flutter";
-      video.status = youtube.VideoStatus()..privacyStatus = "public";
-
-      var media = youtube.Media(
-        _selectedVideoFile!.openRead(),
-        _selectedVideoFile!.lengthSync(),
-      );
-
-      try {
-        var response = await youtubeApi.videos
-            .insert(video, ["snippet", "status"], uploadMedia: media);
+    if (_formKey.currentState!.validate()) {
+      if (_selectedVideoFile != null && widget.currentUser != null) {
         setState(() {
-          _videoUrl = 'https://www.youtube.com/watch?v=${response.id}';
+          _isUploading = true; // Start the upload, show the progress indicator
         });
+        final authHeaders = await widget.currentUser!.authHeaders;
+        final client = AuthenticatedClient(http.Client(), authHeaders);
+        youtube.YouTubeApi youtubeApi = youtube.YouTubeApi(client);
+
+        var video = youtube.Video();
+        video.snippet = youtube.VideoSnippet()
+          ..title = _titleController.text
+          ..description = _descriptionController.text;
+        video.status = youtube.VideoStatus()..privacyStatus = "public";
+
+        var media = youtube.Media(
+          _selectedVideoFile!.openRead(),
+          _selectedVideoFile!.lengthSync(),
+        );
+
+        try {
+          var response = await youtubeApi.videos
+              .insert(video, ["snippet", "status"], uploadMedia: media);
+          setState(() {
+            _videoUrl = 'https://www.youtube.com/watch?v=${response.id}';
+            _isUploading =
+                false; // Upload complete, hide the progress indicator
+          });
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Upload successful: $_videoUrl'),
+          ));
+        } catch (e) {
+          setState(() {
+            _isUploading = false; // Hide the progress indicator if upload fails
+          });
+          print('Error uploading video: $e');
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Upload failed: $e'),
+          ));
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Upload successful: $_videoUrl'),
-        ));
-      } catch (e) {
-        print('Error uploading video: $e');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Upload failed: $e'),
+          content: Text('No video available to upload or not authenticated.'),
         ));
       }
-    } else {
-      print("No video file selected or not authenticated");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('No video available to upload or not authenticated.'),
-      ));
     }
   }
 
@@ -175,14 +188,20 @@ class _UploadScreenState extends State<UploadScreen> {
               },
             ),
           ),
-          ElevatedButton(
-            onPressed: _uploadVideoToYouTube,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red, // Red background for the button
-              foregroundColor: Colors.white, // White text color
+          // Show CircularProgressIndicator during upload
+          if (_isUploading)
+            Center(
+              child: CircularProgressIndicator(),
+            )
+          else
+            ElevatedButton(
+              onPressed: _uploadVideoToYouTube,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Red background for the button
+                foregroundColor: Colors.white, // White text color
+              ),
+              child: Text('Upload to YouTube'),
             ),
-            child: Text('Upload to YouTube'),
-          ),
           if (_videoUrl != null)
             ElevatedButton(
               onPressed: () {
@@ -271,6 +290,53 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
+  Widget _buildTextInputFields() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextFormField(
+            controller: _titleController,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a video title';
+              }
+              return null;
+            },
+            decoration: InputDecoration(
+              labelText: widget.generatedVideoPath.isNotEmpty
+                  ? 'Generated video title'
+                  : 'Video Title',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextFormField(
+            controller: _descriptionController,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a video description';
+              }
+              return null;
+            },
+            decoration: InputDecoration(
+              labelText: widget.generatedVideoPath.isNotEmpty
+                  ? 'Generated video description'
+                  : 'Video Description',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+        ),
+        SizedBox(
+            height:
+                40), // Add bottom margin to avoid blocking by the bottom sheet
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     String appBarTitle;
@@ -286,23 +352,27 @@ class _UploadScreenState extends State<UploadScreen> {
       appBar: AppBar(
         title: Text(appBarTitle), // Dynamic title
       ),
-      body: _selectedVideoFile == null
-          ? _buildEmptyState()
-          : Column(
-              children: [
-                // Video Preview Section
-                if (_selectedVideoFile != null && _videoController != null)
-                  _buildVideoPreview(),
-                SizedBox(height: 20),
-                Expanded(
-                  child: Center(
-                    child: widget.isAuthenticated
-                        ? Text('Ready to upload your video!')
-                        : Text('Please sign in to upload your video'),
-                  ),
-                ),
-              ],
-            ),
+      body: SingleChildScrollView(
+        // Make the entire content scrollable
+        child: Form(
+          key: _formKey, // Add the form key for validation
+          child: Column(
+            children: [
+              // Video Preview Section
+              if (_selectedVideoFile == null)
+                _buildEmptyState()
+              else if (_selectedVideoFile != null && _videoController != null)
+                _buildVideoPreview(),
+              SizedBox(height: 20),
+              // Show title and description input fields only when a video is selected or generated
+              if (_selectedVideoFile != null ||
+                  widget.generatedVideoPath.isNotEmpty)
+                _buildTextInputFields(),
+              SizedBox(height: 100), // Add spacing at the bottom
+            ],
+          ),
+        ),
+      ),
       bottomSheet: widget.isAuthenticated
           ? _buildLoggedInBottomSheet()
           : _buildLoggedOutBottomSheet(),
