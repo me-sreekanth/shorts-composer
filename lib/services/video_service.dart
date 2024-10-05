@@ -45,9 +45,10 @@ class VideoService {
       final Random random = Random();
 
       final List<String> effects = [
-        "zoompan=z='zoom+0.0015':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
-        "zoompan=z='zoom+0.005':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=25:s=1080x1920",
-        "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d={duration}:s=1080x1920",
+        "zoompan=z='zoom+0.0015':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920", //zoom in
+        "zoompan=z='zoom+0.005':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=25:s=1080x1920", // zoom in multiple times
+        "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d={duration}:s=1080x1920", // jerk animation
+        "zoompan=z='1.3+random(1)*0.1':x='random(1)*iw':y='random(1)*ih':d={duration}:s=1080x1920", // Random zoom with both horizontal and vertical random panning
       ];
 
       for (var scene in scenes) {
