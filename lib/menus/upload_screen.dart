@@ -5,7 +5,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:googleapis/youtube/v3.dart' as youtube;
 import 'package:googleapis_auth/googleapis_auth.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart'; // Add open_filex package
+import 'package:video_player/video_player.dart'; // Add video_player package
+import 'package:path/path.dart' as path; // For file name extraction
+import 'package:url_launcher/url_launcher.dart'; // Add url_launcher package
 
 class UploadScreen extends StatefulWidget {
   final String generatedVideoPath;
@@ -29,11 +32,24 @@ class UploadScreen extends StatefulWidget {
 class _UploadScreenState extends State<UploadScreen> {
   File? _selectedVideoFile;
   String? _videoUrl;
+  VideoPlayerController? _videoController;
 
   @override
   void initState() {
     super.initState();
-    _selectedVideoFile = File(widget.generatedVideoPath);
+    if (widget.generatedVideoPath.isNotEmpty) {
+      _selectedVideoFile = File(widget.generatedVideoPath);
+      _initializeVideoPlayer();
+    }
+  }
+
+  Future<void> _initializeVideoPlayer() async {
+    if (_selectedVideoFile != null) {
+      _videoController = VideoPlayerController.file(_selectedVideoFile!)
+        ..initialize().then((_) {
+          setState(() {}); // Ensure that the video preview updates
+        });
+    }
   }
 
   Future<void> _pickVideo() async {
@@ -43,6 +59,7 @@ class _UploadScreenState extends State<UploadScreen> {
       setState(() {
         _selectedVideoFile = File(pickedFile.path);
       });
+      _initializeVideoPlayer();
     } else {
       print("No video selected");
     }
@@ -88,61 +105,214 @@ class _UploadScreenState extends State<UploadScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Upload Generated Video'),
-        actions: [
-          if (widget.isAuthenticated)
-            IconButton(
+  Future<void> _openVideo() async {
+    if (_selectedVideoFile != null) {
+      await OpenFilex.open(
+          _selectedVideoFile!.path); // Open video file using open_filex
+    }
+  }
+
+  // Helper function to launch a URL
+  Future<void> _launchYouTubeUrl(String url) async {
+    final Uri _url = Uri.parse(url);
+    if (!await launchUrl(_url, mode: LaunchMode.externalApplication)) {
+      throw 'Could not launch $_url';
+    }
+  }
+
+  Widget _buildLoggedOutBottomSheet() {
+    return Container(
+      width: MediaQuery.of(context).size.width, // Fill entire screen width
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Sign in to upload videos",
+            style: TextStyle(color: Colors.black, fontSize: 18),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              widget.onSignIn();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, // Red background for the button
+              foregroundColor: Colors.white, // White text color
+            ),
+            child: Text('Sign In with YouTube'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoggedInBottomSheet() {
+    return Container(
+      width: MediaQuery.of(context).size.width, // Fill entire screen width
+      decoration: BoxDecoration(
+        color: Colors.white, // Set the background color to white
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20), // Curved top border
+        ),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: GoogleUserCircleAvatar(identity: widget.currentUser!),
+            title: Text(widget.currentUser?.displayName ?? ''),
+            subtitle: Text(widget.currentUser?.email ?? ''),
+            trailing: IconButton(
               icon: Icon(Icons.logout),
               onPressed: () {
                 widget.onSignOut();
               },
-            )
+            ),
+          ),
+          ElevatedButton(
+            onPressed: _uploadVideoToYouTube,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, // Red background for the button
+              foregroundColor: Colors.white, // White text color
+            ),
+            child: Text('Upload to YouTube'),
+          ),
+          if (_videoUrl != null)
+            ElevatedButton(
+              onPressed: () {
+                _launchYouTubeUrl(_videoUrl!); // Use the new helper method
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Red background for the button
+                foregroundColor: Colors.white, // White text color
+              ),
+              child: Text('Open Video in YouTube'),
+            ),
         ],
       ),
-      body: Center(
-        child: widget.isAuthenticated
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (widget.currentUser != null)
-                    ListTile(
-                      leading:
-                          GoogleUserCircleAvatar(identity: widget.currentUser!),
-                      title: Text(widget.currentUser?.displayName ?? ''),
-                      subtitle: Text(widget.currentUser?.email ?? ''),
-                    ),
-                  ElevatedButton(
-                    onPressed: _pickVideo,
-                    child: Text('Pick a Video'),
-                  ),
-                  if (_selectedVideoFile != null) ...[
-                    Text('Selected video: ${_selectedVideoFile!.path}'),
-                    ElevatedButton(
-                      onPressed: _uploadVideoToYouTube,
-                      child: Text('Upload Video'),
-                    ),
-                  ],
-                  if (_videoUrl != null)
-                    ElevatedButton(
-                      onPressed: () {
-                        launch(_videoUrl!);
-                      },
-                      child: Text('Open Video in YouTube'),
-                    ),
-                ],
-              )
-            : ElevatedButton(
-                onPressed: () {
-                  widget.onSignIn();
-                },
-                child: Text('Sign In with Google'),
-              ),
-      ),
     );
+  }
+
+  Widget _buildVideoPreview() {
+    if (_selectedVideoFile == null || _videoController == null) {
+      return Container();
+    }
+
+    return Stack(
+      children: [
+        // Video Preview with play button at the center
+        Stack(
+          children: [
+            Container(
+              height:
+                  MediaQuery.of(context).size.height / 2, // Half screen height
+              width: double.infinity,
+              child: _videoController!.value.isInitialized
+                  ? VideoPlayer(_videoController!)
+                  : Container(color: Colors.black),
+            ),
+            Positioned.fill(
+              child: Center(
+                child: IconButton(
+                  icon: Icon(
+                    Icons.play_circle_fill,
+                    color: Colors.white,
+                    size: 64,
+                  ),
+                  onPressed:
+                      _openVideo, // Open the video file on play button click
+                ),
+              ),
+            ),
+          ],
+        ),
+        // Display the file name at the bottom left above the preview area
+        Positioned(
+          left: 16,
+          bottom: 8,
+          child: Text(
+            'File: ${path.basename(_selectedVideoFile!.path)}',
+            style: TextStyle(
+                color: Colors.white, fontSize: 18), // Increased font size
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.center, // Center content horizontally
+      children: [
+        // Grey background with the same dimensions as the video preview area
+        Container(
+          height: MediaQuery.of(context).size.height / 2, // Half screen height
+          width: MediaQuery.of(context).size.width, // Full screen width
+          color: Colors.grey[300], // Grey background color
+          child: Center(
+            child: ElevatedButton(
+              onPressed: _pickVideo,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Red background for the button
+                foregroundColor: Colors.white, // White text color
+              ),
+              child: Text('Pick a Video from Gallery'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String appBarTitle;
+    if (widget.generatedVideoPath.isNotEmpty) {
+      appBarTitle = 'Upload Generated Video';
+    } else if (_selectedVideoFile != null) {
+      appBarTitle = 'Upload Picked Video';
+    } else {
+      appBarTitle = 'Upload Video';
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(appBarTitle), // Dynamic title
+      ),
+      body: _selectedVideoFile == null
+          ? _buildEmptyState()
+          : Column(
+              children: [
+                // Video Preview Section
+                if (_selectedVideoFile != null && _videoController != null)
+                  _buildVideoPreview(),
+                SizedBox(height: 20),
+                Expanded(
+                  child: Center(
+                    child: widget.isAuthenticated
+                        ? Text('Ready to upload your video!')
+                        : Text('Please sign in to upload your video'),
+                  ),
+                ),
+              ],
+            ),
+      bottomSheet: widget.isAuthenticated
+          ? _buildLoggedInBottomSheet()
+          : _buildLoggedOutBottomSheet(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
   }
 }
 
