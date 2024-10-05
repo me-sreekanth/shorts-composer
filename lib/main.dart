@@ -277,7 +277,7 @@ class _AppBodyState extends State<AppBody> {
               ? p.basename(_watermarkFilePath!)
               : null,
         );
-      case 4:
+      case 3:
         return UploadScreen(
           generatedVideoPath: _videoFilePath ?? '', // Pass the video path here
           currentUser: _currentUser, // Pass the authenticated user
