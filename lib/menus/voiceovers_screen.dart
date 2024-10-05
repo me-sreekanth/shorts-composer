@@ -1,14 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:shorts_composer/config.dart';
-import 'package:shorts_composer/models/scene.dart';
-import 'package:shorts_composer/services/api_service.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
-import 'package:http/http.dart' as http;
+import 'package:shorts_composer/components/seekbar.dart';
+import 'package:shorts_composer/models/scene.dart';
+import 'package:shorts_composer/services/voiceover_service.dart';
+import 'package:shorts_composer/services/api_service.dart';
+import 'dart:io';
 import 'package:path/path.dart' as p;
 
 class VoiceoversScreen extends StatefulWidget {
@@ -30,10 +26,16 @@ class VoiceoversScreen extends StatefulWidget {
 
 class _VoiceoversScreenState extends State<VoiceoversScreen> {
   bool _isLoading = false;
+  bool _isTranscribing = false;
   int _loadingIndex = -1;
-  String? _assFileName;
   final List<AudioPlayer> _audioPlayers = [];
   final List<bool> _isPlaying = [];
+  final _voiceoverService = VoiceoverService();
+  AudioPlayer? _combinedAudioPlayer;
+  bool _isCombinedPlaying = false;
+  String? _combinedAudioPath;
+  String?
+      _firstFewWordsFromAss; // To store the first few words from the .ass file
 
   @override
   void initState() {
@@ -51,391 +53,390 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     }
   }
 
-  @override
-  void didUpdateWidget(covariant VoiceoversScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.scenes.length != widget.scenes.length) {
-      _initializePlayers();
-    }
+  // Calculate the number of scenes with voiceovers
+  int _getScenesWithVoiceovers() {
+    return widget.scenes.where((scene) => scene.voiceoverUrl != null).length;
   }
 
-  @override
-  void dispose() {
-    for (var player in _audioPlayers) {
-      player.dispose();
-    }
-    super.dispose();
-  }
-
-  // Method to pick an MP3 file using File Picker
   void _pickVoiceover(int index) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mp3'],
-    );
-    if (result != null && result.files.single.path != null) {
-      widget.onVoiceoverSelected(index, result.files.single.path!,
-          isLocal: true);
-      await _audioPlayers[index].setFilePath(result.files.single.path!);
+    String? filePath = await _voiceoverService.pickVoiceover();
+    if (filePath != null) {
+      widget.onVoiceoverSelected(index, filePath, isLocal: true);
+      await _audioPlayers[index].setFilePath(filePath);
     }
   }
 
-  // Method to generate the voiceover, save the file, and play it
   Future<void> _generateVoiceover(int index) async {
     setState(() {
       _isLoading = true;
       _loadingIndex = index;
     });
-
     try {
       final scene = widget.scenes[index];
-      // Generate voiceover and get the file URL or path
-      final voiceoverFilePath = await widget.apiService
-          .generateVoiceover(scene.text, scene.sceneNumber);
-
+      final voiceoverFilePath = await _voiceoverService.generateVoiceover(
+          scene.text, scene.sceneNumber, widget.apiService);
       if (voiceoverFilePath != null) {
         widget.onVoiceoverSelected(index, voiceoverFilePath, isLocal: true);
-        await _audioPlayers[index]
-            .setFilePath(voiceoverFilePath); // Set the voiceover to the player
+        await _audioPlayers[index].setFilePath(voiceoverFilePath);
       } else {
         _showError('Failed to generate voiceover.');
       }
-    } catch (e) {
-      _showError('Error generating voiceover: $e');
-    }
-
-    setState(() {
-      _isLoading = false;
-      _loadingIndex = -1;
-    });
-  }
-
-  Future<void> _transcribeAndGenerateAss(String audioFilePath) async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      String contentType;
-      if (audioFilePath.endsWith('.mp3')) {
-        contentType = 'audio/mpeg';
-      } else if (audioFilePath.endsWith('.wav')) {
-        contentType = 'audio/wav';
-      } else {
-        print('Unsupported file type');
-        return;
-      }
-
-      File file = File(audioFilePath);
-      List<int> fileBytes = await file.readAsBytes();
-
-      Uri url = Uri.parse(
-          'https://api.deepgram.com/v1/listen?smart_format=true&model=nova-2&language=en-IN');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Token ${Config.transcribeVoiceoversToken}',
-          'Content-Type': contentType,
-        },
-        body: fileBytes,
-      );
-
-      print('Response status code: ${response.statusCode}');
-      if (response.statusCode == 200) {
-        Map<String, dynamic> responseBody = jsonDecode(response.body);
-        List<dynamic> words =
-            responseBody['results']['channels'][0]['alternatives'][0]['words'];
-        String assFilePath = await _createAssFileFromApi(words);
-        setState(() {
-          _assFileName = p.basename(assFilePath);
-          widget.onAssFileGenerated(assFilePath);
-          print('Generated .ass file: $_assFileName');
-        });
-      } else {
-        print('Error: ${response.body}');
-        _showError('Error: ${response.body}');
-      }
-    } catch (e) {
-      _showError('An error occurred: $e');
-      print('Exception: $e');
     } finally {
       setState(() {
         _isLoading = false;
+        _loadingIndex = -1;
       });
     }
   }
 
-  Future<Directory?> _getStorageDirectory() async {
-    if (Platform.isAndroid) {
-      return await getExternalStorageDirectory();
-    } else if (Platform.isIOS) {
-      return await getApplicationDocumentsDirectory();
-    }
-    return null;
-  }
-
-  Future<String> _createAssFileFromApi(List<dynamic> words) async {
-    Directory? directory = await _getStorageDirectory();
-
-    final String folderName = "ShortsComposer";
-    final Directory appDir = Directory('${directory!.path}/$folderName');
-
-    if (!(await appDir.exists())) {
-      await appDir.create(recursive: true);
+  Future<void> _transcribeCombinedVoiceovers() async {
+    // Check if all scenes have voiceovers
+    if (widget.scenes.any((scene) => scene.voiceoverUrl == null)) {
+      _showError("Please pick or generate voiceovers for all scenes.");
+      return;
     }
 
-    final String assFilePath = '${appDir.path}/generated_subtitles.ass';
-    final File assFile = File(assFilePath);
-    IOSink sink = assFile.openWrite();
+    setState(() {
+      _isTranscribing = true;
+    });
 
-    final String fontName = "impact";
-    final int fontSize = 20;
-    final String primaryColor = "&H00FFFFFF";
-    final String backColor = "&H0000FFFF";
-    final String outlineColor = "&H00000000";
-    final int outlineThickness = 20;
-    final int shadowThickness = 20;
-    final int alignment = 2;
-    final int bold = -1;
-    final int verticalMargin = 100;
-
-    // Writing Script Info
-    sink.writeln('[Script Info]');
-    sink.writeln('Title: Transcription');
-    sink.writeln('ScriptType: v4.00+');
-    sink.writeln('Collisions: Normal');
-    sink.writeln('PlayDepth: 0');
-    sink.writeln('Timer: 100.0000');
-
-    // Writing Styles
-    sink.writeln('[V4+ Styles]');
-    sink.writeln(
-        'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding');
-    sink.writeln(
-        'Style: Default,$fontName,$fontSize,$primaryColor,$primaryColor,$outlineColor,$backColor,$bold,0,0,0,100,100,0,0,1,$outlineThickness,$shadowThickness,$alignment,10,10,$verticalMargin,1');
-
-    // Writing Events
-    sink.writeln('[Events]');
-    sink.writeln(
-        'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text');
-
-    // Writing dialogue lines
-    for (var word in words) {
-      String start = _formatTime(word['start']);
-      String end = _formatTime(word['end']);
-      String text = word['punctuated_word'].replaceAll('\n', ' ').toUpperCase();
-
-      print('Writing subtitle: Start: $start, End: $end, Text: $text');
-      // Adjusted alignment \an2 ensures bottom center alignment
-      sink.writeln(
-          'Dialogue: 0,$start,$end,Default,,0,0,$verticalMargin,,{\\an2}$text');
-    }
-
-    await sink.close();
-    print(
-        'ASS file created. Path: $assFilePath, Size: ${assFile.lengthSync()} bytes');
-    return assFilePath;
-  }
-
-// Helper function to format time as HH:MM:SS.xx
-  String _formatTime(double time) {
-    int hours = time ~/ 3600;
-    int minutes = (time % 3600) ~/ 60;
-    int seconds = (time % 60).toInt();
-    int milliseconds = ((time % 1) * 100).toInt();
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${milliseconds.toString().padLeft(2, '0')}';
-  }
-
-  // Method to combine voiceovers into a single audio file
-  Future<String?> _combineVoiceovers() async {
-    Directory directory = await getApplicationDocumentsDirectory();
-    String outputPath = '${directory.path}/combined_voiceover.mp3';
-
-    // Create a list of voiceover file paths
     List<String> voiceoverFiles = widget.scenes
         .where((scene) => scene.voiceoverUrl != null)
         .map((scene) => scene.voiceoverUrl!)
         .toList();
 
-    if (voiceoverFiles.isEmpty) {
-      print("No voiceovers available to combine.");
-      return null;
-    }
+    _combinedAudioPath =
+        await _voiceoverService.combineVoiceovers(voiceoverFiles);
 
-    // Handle the case where there is only one voiceover file (no need to concatenate)
-    if (voiceoverFiles.length == 1) {
-      print("Only one voiceover file, copying it directly.");
-      File inputFile = File(voiceoverFiles.first);
-      await inputFile.copy(outputPath);
-      return outputPath;
-    }
+    if (_combinedAudioPath != null) {
+      String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
+          _combinedAudioPath!, widget.onAssFileGenerated);
 
-    // Create a temporary file listing the voiceover files
-    String concatFilePath = '${directory.path}/concat.txt';
-    File concatFile = File(concatFilePath);
-    IOSink sink = concatFile.openWrite();
-    for (String filePath in voiceoverFiles) {
-      sink.writeln("file '$filePath'");
-    }
-    await sink.close();
+      // Extract the first few words from the .ass file
+      _firstFewWordsFromAss = await _getFirstFewWordsFromAssFile(assFilePath);
 
-    // Use FFmpeg concat protocol to combine the audio files
-    String ffmpegCommand =
-        '-y -f concat -safe 0 -i "$concatFilePath" -c copy "$outputPath"';
-
-    print("Executing FFmpeg command: $ffmpegCommand");
-
-    final session = await FFmpegKit.execute(ffmpegCommand);
-    final returnCode = await session.getReturnCode();
-
-    if (returnCode!.isValueSuccess()) {
-      print("Voiceovers combined successfully at: $outputPath");
-      return outputPath;
+      _combinedAudioPlayer = AudioPlayer();
+      await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
     } else {
-      print("FFmpeg failed with return code: $returnCode");
-      return null;
+      _showError("No voiceovers available to combine.");
     }
+
+    setState(() {
+      _isTranscribing = false;
+    });
+  }
+
+  // Method to extract the first few words from the .ass file, removing formatting codes
+// Method to extract the first few words from the .ass file, removing formatting codes
+  Future<String> _getFirstFewWordsFromAssFile(String assFilePath) async {
+    final assFile = await File(assFilePath).readAsString();
+    final lines = assFile.split('\n');
+    List<String> words = [];
+
+    // Regex to match and remove ASS formatting codes
+    RegExp formattingRegex = RegExp(r'{\\.*?}');
+
+    for (String line in lines) {
+      if (line.startsWith('Dialogue:')) {
+        final dialogueParts = line.split(',');
+        if (dialogueParts.length > 9) {
+          // Get the actual text part
+          final textPart = dialogueParts[9].replaceAll('\\N', ' ').trim();
+
+          // Remove formatting codes
+          final cleanedText = textPart.replaceAll(formattingRegex, '');
+
+          words.addAll(cleanedText.split(' '));
+        }
+      }
+    }
+
+    return words.join(' ');
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        backgroundColor: Colors.redAccent,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _combinedAudioPlayer?.dispose();
+    _audioPlayers.forEach((player) => player.dispose());
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        _buildHeader(),
         Expanded(
           child: ListView.builder(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             itemCount: widget.scenes.length,
             itemBuilder: (context, index) {
               final scene = widget.scenes[index];
               final player = _audioPlayers[index];
-              return Card(
-                child: ListTile(
-                  title: TextField(
-                    controller: TextEditingController(text: scene.text),
-                    onChanged: (newText) {
-                      setState(() {
-                        scene.text = newText;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Scene Text',
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (scene.voiceoverUrl != null)
-                        Text('Voiceover: ${scene.voiceoverUrl}')
-                      else
-                        Text('No Voiceover'),
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => _pickVoiceover(index),
-                            child: Text('Pick'),
-                          ),
-                          SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () => _generateVoiceover(index),
-                            child: Text('Generate'),
-                          ),
-                        ],
-                      ),
-                      if (_isLoading && _loadingIndex == index)
-                        LinearProgressIndicator(),
-                      if (scene.voiceoverUrl != null) ...[
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(_isPlaying[index]
-                                  ? Icons.pause
-                                  : Icons.play_arrow),
-                              onPressed: () async {
-                                if (_isPlaying[index]) {
-                                  await player.pause();
-                                } else {
-                                  await player.play();
-                                }
-                                setState(() {
-                                  _isPlaying[index] = !_isPlaying[index];
-                                });
-                              },
-                            ),
-                            Expanded(
-                              child: StreamBuilder<Duration>(
-                                stream: player.positionStream,
-                                builder: (context, snapshot) {
-                                  final position =
-                                      snapshot.data ?? Duration.zero;
-                                  final duration =
-                                      player.duration ?? Duration.zero;
-                                  return SeekBar(
-                                    duration: duration,
-                                    position: position,
-                                    onChangeEnd: (newPosition) {
-                                      player.seek(newPosition);
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
+              return _buildSceneCard(scene, player, index);
             },
           ),
         ),
-        ElevatedButton(
-          onPressed: () async {
-            String? combinedAudioPath = await _combineVoiceovers();
-            if (combinedAudioPath != null) {
-              await _transcribeAndGenerateAss(combinedAudioPath);
-            } else {
-              _showError("No voiceovers available to combine.");
-            }
-          },
-          child: Text('Transcribe Combined Voiceovers'),
-        ),
+        _buildBottomSheet(),
         if (_isLoading) CircularProgressIndicator(),
       ],
     );
   }
-}
 
-class SeekBar extends StatelessWidget {
-  final Duration duration;
-  final Duration position;
-  final ValueChanged<Duration> onChangeEnd;
+  Widget _buildHeader() {
+    int scenesWithVoiceovers = _getScenesWithVoiceovers();
+    int totalScenes = widget.scenes.length;
 
-  SeekBar({
-    required this.duration,
-    required this.position,
-    required this.onChangeEnd,
-  });
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Text(
+        'Scenes with voiceovers ($scenesWithVoiceovers/$totalScenes)',
+        style: TextStyle(
+          fontSize: 24.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.blueAccent,
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Slider(
-      min: 0,
-      max: duration.inMilliseconds.toDouble(),
-      value: position.inMilliseconds
-          .toDouble()
-          .clamp(0, duration.inMilliseconds.toDouble()),
-      onChanged: (value) {
-        onChangeEnd(Duration(milliseconds: value.round()));
+  Widget _buildSceneCard(Scene scene, AudioPlayer player, int index) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSceneTextField(scene),
+            const SizedBox(height: 8),
+            _buildVoiceoverStatus(scene),
+            const SizedBox(height: 8),
+            _buildActionButtons(index),
+            if (_isLoading && _loadingIndex == index) LinearProgressIndicator(),
+            if (scene.voiceoverUrl != null)
+              _buildAudioPlayerControls(player, index),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSceneTextField(Scene scene) {
+    return TextField(
+      controller: TextEditingController(text: scene.text),
+      onChanged: (newText) {
+        setState(() {
+          scene.text = newText;
+        });
       },
+      decoration: InputDecoration(
+        labelText: 'Scene Text',
+        labelStyle: TextStyle(fontSize: 16, color: Colors.blueGrey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+    );
+  }
+
+  // Show only the file name of the picked/generated audio
+  Widget _buildVoiceoverStatus(Scene scene) {
+    String? fileName =
+        scene.voiceoverUrl != null ? p.basename(scene.voiceoverUrl!) : null;
+    return Text(
+      fileName != null ? 'Voiceover: $fileName' : 'No Voiceover',
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: scene.voiceoverUrl != null ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(int index) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        ElevatedButton.icon(
+          onPressed: () => _pickVoiceover(index),
+          icon: Icon(Icons.upload_file, color: Colors.white),
+          label: Text('Pick'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+        ),
+        ElevatedButton.icon(
+          onPressed: () => _generateVoiceover(index),
+          icon: Icon(Icons.mic, color: Colors.white),
+          label: Text('Generate'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orangeAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAudioPlayerControls(AudioPlayer player, int index) {
+    return Row(
+      children: [
+        IconButton(
+          icon: Icon(_isPlaying[index] ? Icons.pause : Icons.play_arrow),
+          color: Colors.blueAccent,
+          onPressed: () async {
+            if (_isPlaying[index]) {
+              await player.pause();
+            } else {
+              await player.play();
+            }
+            setState(() {
+              _isPlaying[index] = !_isPlaying[index];
+            });
+          },
+        ),
+        Expanded(
+          child: SeekBar(
+            player: player,
+            onPlayPause: () {
+              setState(() {
+                _isPlaying[index] = !_isPlaying[index];
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomSheet() {
+    return Container(
+      width: double.infinity, // Full screen width
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16.0),
+          topRight: Radius.circular(16.0),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center, // Centering content
+          children: [
+            if (_firstFewWordsFromAss != null &&
+                _firstFewWordsFromAss!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  _firstFewWordsFromAss!,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2, // Limit to 2 lines
+                  overflow: TextOverflow
+                      .ellipsis, // Ellipsis at the end if more than 2 lines
+                ),
+              ),
+            if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
+            SizedBox(height: 16), // Spacing between player and button
+            _buildTranscribeButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCombinedAudioPlayer() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(_isCombinedPlaying ? Icons.pause : Icons.play_arrow),
+              color: Colors.blueAccent,
+              onPressed: () async {
+                if (_isCombinedPlaying) {
+                  await _combinedAudioPlayer!.pause();
+                } else {
+                  await _combinedAudioPlayer!.play();
+                }
+                setState(() {
+                  _isCombinedPlaying = !_isCombinedPlaying;
+                });
+              },
+            ),
+            Expanded(
+              child: SeekBar(
+                player: _combinedAudioPlayer!,
+                onPlayPause: () {
+                  setState(() {
+                    _isCombinedPlaying = !_isCombinedPlaying;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTranscribeButton() {
+    return SizedBox(
+      width: double.infinity, // Full width for the button
+      child: ElevatedButton(
+        onPressed: _isTranscribing ? null : _transcribeCombinedVoiceovers,
+        child: _isTranscribing
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Transcribing...',
+                      style: TextStyle(color: Colors.white)),
+                ],
+              )
+            : Text('Transcribe Voiceovers',
+                style: TextStyle(color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.redAccent, // Red color for transcribe button
+          padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+        ),
+      ),
     );
   }
 }

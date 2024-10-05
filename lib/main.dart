@@ -259,7 +259,8 @@ class _AppBodyState extends State<AppBody> {
           },
 
           // Handle voiceover selection
-          onVoiceoverSelected: (index, voiceoverUrl, {isLocal = false}) {
+          onVoiceoverSelected: (int index, String voiceoverUrl,
+              {bool isLocal = false}) {
             setState(() {
               _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
             });

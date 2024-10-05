@@ -17,5 +17,5 @@ class Config {
 
 //TRANSCRIBE VOICEOVERS configs
   static const String transcribeVoiceoversToken =
-      '4ade915f03177332763e13ad27900ae1b1617f7c';
+      'f925ef20cec038e58baad218728318273ed8631b';
 }
