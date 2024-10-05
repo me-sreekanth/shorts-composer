@@ -272,7 +272,11 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         ElevatedButton.icon(
           onPressed: () => _pickVoiceover(index),
           icon: Icon(Icons.upload_file, color: Colors.white),
-          label: Text('Pick'),
+          label: Text(
+            'Pick',
+            //white text color
+            style: TextStyle(fontSize: 16, color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blueAccent,
             shape: RoundedRectangleBorder(
@@ -283,7 +287,10 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         ElevatedButton.icon(
           onPressed: () => _generateVoiceover(index),
           icon: Icon(Icons.mic, color: Colors.white),
-          label: Text('Generate'),
+          label: Text(
+            'Generate',
+            style: TextStyle(fontSize: 16, color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orangeAccent,
             shape: RoundedRectangleBorder(
