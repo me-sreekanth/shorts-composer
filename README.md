@@ -58,6 +58,8 @@ Working animations
 4
 "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d={duration}:s=1080x1920"
 
+5
+"split[original][copy];[copy]crop=iw:ih/3:0:ih/3,boxblur=10[blurred];[original][blurred]overlay=0:(H-h)/2",
 
 
 Not working

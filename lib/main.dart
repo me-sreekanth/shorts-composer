@@ -3,14 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shorts_composer/menus/sounds_watermark_screen.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
 import 'package:shorts_composer/services/video_service.dart';
 import 'package:shorts_composer/menus/preview_screen.dart';
 import 'package:shorts_composer/menus/scenes_screen.dart';
 import 'package:shorts_composer/menus/voiceovers_screen.dart';
-import 'package:shorts_composer/menus/sounds_screen.dart';
-import 'package:shorts_composer/menus/watermarks_screen.dart';
 import 'package:shorts_composer/menus/upload_screen.dart';
 import 'package:path/path.dart' as p;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -268,15 +267,12 @@ class _AppBodyState extends State<AppBody> {
           },
         );
       case 2:
-        return SoundsScreen(
+        return SoundsWatermarkScreen(
           onMusicSelected: _onMusicSelected,
+          videoService: _videoService,
           backgroundMusicFileName: _backgroundMusicPath != null
               ? p.basename(_backgroundMusicPath!)
               : null,
-        );
-      case 3:
-        return WatermarksScreen(
-          videoService: _videoService,
           watermarkFileName: _watermarkFilePath != null
               ? p.basename(_watermarkFilePath!)
               : null,
