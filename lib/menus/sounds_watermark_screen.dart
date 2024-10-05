@@ -30,7 +30,7 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
   String? _backgroundMusicFileName;
   File? _selectedWatermark;
   bool _isLoading = false;
-  AudioPlayer? _audioPlayer; // For playing audio
+  AudioPlayer? _audioPlayer;
   bool _isPlaying = false;
 
   @override
@@ -38,6 +38,14 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
     super.initState();
     _backgroundMusicFileName = widget.backgroundMusicFileName;
     _audioPlayer = AudioPlayer();
+
+    // Listen to changes in the playing state
+    _audioPlayer?.playingStream.listen((isPlaying) {
+      setState(() {
+        _isPlaying = isPlaying;
+      });
+    });
+
     if (widget.videoService.watermarkPath != null) {
       _selectedWatermark = File(widget.videoService.watermarkPath!);
     }
@@ -77,8 +85,11 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
         setState(() {
           _backgroundMusicFileName = p.basename(newFilePath);
           widget.onMusicSelected(newFilePath);
-          _audioPlayer
-              ?.setFilePath(newFilePath); // Load the music file for playback
+
+          // Load and play the music file automatically
+          _audioPlayer?.setFilePath(newFilePath).then((_) {
+            _audioPlayer?.play(); // Start playing as soon as it's loaded
+          });
         });
 
         print('Stored background music at: $newFilePath');
@@ -105,6 +116,22 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
     }
   }
 
+  // Clear the selected background music
+  void _clearBackgroundMusic() {
+    setState(() {
+      _backgroundMusicFileName = null;
+      _audioPlayer?.stop();
+    });
+  }
+
+  // Clear the selected watermark
+  void _clearWatermark() {
+    setState(() {
+      _selectedWatermark = null;
+      widget.videoService.watermarkPath = null;
+    });
+  }
+
   // Get appropriate storage directory based on platform
   Future<Directory?> _getStorageDirectory() async {
     if (Platform.isAndroid) {
@@ -121,9 +148,6 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
     } else {
       await _audioPlayer?.play();
     }
-    setState(() {
-      _isPlaying = !_isPlaying;
-    });
   }
 
   @override
@@ -132,94 +156,172 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
       appBar: AppBar(
         title: const Text('Customize Sound & Watermark'),
       ),
-      body: Column(
-        children: [
-          // Background Music Section (occupies half of the screen)
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                border: Border.all(color: Colors.blue),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Background Music',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0), // Overall padding
+          child: Column(
+            children: [
+              // Background Music Section (as a card)
+              ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: 350, // Minimum height for the card
+                ),
+                child: Card(
+                  margin: const EdgeInsets.only(
+                      bottom: 16), // Add space between cards
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Background Music',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (_backgroundMusicFileName != null)
+                          Text(
+                            'Selected: $_backgroundMusicFileName',
+                            textAlign: TextAlign.center,
+                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _pickBackgroundMusic,
+                              icon: const Icon(Icons.music_note),
+                              label: const Text('Pick Background Music'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                textStyle: const TextStyle(fontSize: 16),
+                                minimumSize: Size
+                                    .zero, // Ensure button adjusts to content size
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ),
+                            if (_backgroundMusicFileName != null)
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: _clearBackgroundMusic,
+                                tooltip: 'Delete Background Music',
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        if (_backgroundMusicFileName != null)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                                ),
+                                onPressed: _togglePlayPause,
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0),
+                                  child: SeekBar(
+                                    player: _audioPlayer!,
+                                    onPlayPause: _togglePlayPause,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  if (_backgroundMusicFileName != null)
-                    Text('Selected: $_backgroundMusicFileName'),
-                  ElevatedButton.icon(
-                    onPressed: _pickBackgroundMusic,
-                    icon: const Icon(Icons.music_note),
-                    label: const Text('Pick Background Music'),
-                  ),
-                  const SizedBox(height: 10),
-                  if (_backgroundMusicFileName != null)
-                    Column(
+                ),
+              ),
+
+              // Watermark Section (as a card)
+              ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: 350, // Minimum height for the card
+                ),
+                child: Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        ElevatedButton.icon(
-                          onPressed: _togglePlayPause,
-                          icon:
-                              Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                          label: Text(_isPlaying ? 'Pause' : 'Play'),
+                        const Text(
+                          'Watermark',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        SeekBar(
-                          player: _audioPlayer!,
-                          onPlayPause: _togglePlayPause,
+                        if (_selectedWatermark != null)
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth:
+                                  200, // Set a max width for the image container
+                              minWidth: 50,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black26),
+                              ),
+                              child: Image.file(
+                                _selectedWatermark!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _pickWatermark,
+                              icon: const Icon(Icons.image),
+                              label: const Text('Pick Watermark'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                textStyle: const TextStyle(fontSize: 16),
+                                minimumSize: Size
+                                    .zero, // Ensure button adjusts to content size
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ),
+                            if (_selectedWatermark != null)
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: _clearWatermark,
+                                tooltip: 'Delete Watermark',
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        const Text(
+                          'Recommended size: 100x50',
+                          style: TextStyle(color: Colors.grey),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
-                ],
-              ),
-            ),
-          ),
-
-          // Watermark Section (occupies half of the screen)
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                border: Border.all(color: Colors.green),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Watermark',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
-                  const SizedBox(height: 10),
-                  _selectedWatermark != null
-                      ? Image.file(_selectedWatermark!)
-                      : widget.watermarkFileName != null
-                          ? Text(
-                              'Selected watermark: ${widget.watermarkFileName}')
-                          : const Text('No watermark selected'),
-                  ElevatedButton.icon(
-                    onPressed: _pickWatermark,
-                    icon: const Icon(Icons.image),
-                    label: const Text('Pick Watermark'),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
 
-          if (_isLoading) const CircularProgressIndicator(),
-        ],
+              if (_isLoading) const CircularProgressIndicator(),
+            ],
+          ),
+        ),
       ),
     );
   }

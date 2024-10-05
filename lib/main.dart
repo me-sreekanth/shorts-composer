@@ -314,13 +314,9 @@ class _AppBodyState extends State<AppBody> {
               label: 'Voiceovers',
               tooltip: 'Add voiceovers'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.transcribe),
-              label: 'Transcribe',
-              tooltip: 'Generate transcriptions'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.branding_watermark),
-              label: 'Watermarks',
-              tooltip: 'Add watermarks'),
+              icon: Icon(Icons.library_music_outlined),
+              label: 'Music & Watermarks',
+              tooltip: 'Add background music and watermarks'),
           BottomNavigationBarItem(
               icon: Icon(Icons.upload),
               label: 'Upload',
