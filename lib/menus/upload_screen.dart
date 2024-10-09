@@ -17,12 +17,18 @@ class UploadScreen extends StatefulWidget {
   final Function onSignIn; // Handle sign-in method
   final Function onSignOut; // Handle sign-out method
 
+  // Add TextEditingController as a parameter to maintain state
+  final TextEditingController titleController;
+  final TextEditingController descriptionController;
+
   UploadScreen({
     required this.generatedVideoPath,
     required this.currentUser,
     required this.isAuthenticated,
     required this.onSignIn,
     required this.onSignOut,
+    required this.titleController, // Maintain the state of title input
+    required this.descriptionController, // Maintain the state of description input
   });
 
   @override
@@ -34,8 +40,6 @@ class _UploadScreenState extends State<UploadScreen> {
   String? _videoUrl;
   VideoPlayerController? _videoController;
   bool _isUploading = false; // Track upload progress
-  final _titleController = TextEditingController(); // Title input
-  final _descriptionController = TextEditingController(); // Description input
   final _formKey = GlobalKey<FormState>(); // Form key for validation
 
   @override
@@ -81,8 +85,8 @@ class _UploadScreenState extends State<UploadScreen> {
 
         var video = youtube.Video();
         video.snippet = youtube.VideoSnippet()
-          ..title = _titleController.text
-          ..description = _descriptionController.text;
+          ..title = widget.titleController.text
+          ..description = widget.descriptionController.text;
         video.status = youtube.VideoStatus()..privacyStatus = "public";
 
         var media = youtube.Media(
@@ -253,12 +257,23 @@ class _UploadScreenState extends State<UploadScreen> {
         ),
         // Display the file name at the bottom left above the preview area
         Positioned(
-          left: 16,
-          bottom: 8,
-          child: Text(
-            'File: ${path.basename(_selectedVideoFile!.path)}',
-            style: TextStyle(
-                color: Colors.white, fontSize: 18), // Increased font size
+          left: 10,
+          bottom: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                vertical: 8.0, horizontal: 12.0), // Inner padding
+            decoration: BoxDecoration(
+              color: Colors.black, // Background color
+              borderRadius: BorderRadius.circular(12), // Curved border
+            ),
+            child: Text(
+              'File: ${path.basename(_selectedVideoFile!.path)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ],
@@ -296,7 +311,7 @@ class _UploadScreenState extends State<UploadScreen> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: TextFormField(
-            controller: _titleController,
+            controller: widget.titleController,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a video title';
@@ -305,8 +320,8 @@ class _UploadScreenState extends State<UploadScreen> {
             },
             decoration: InputDecoration(
               labelText: widget.generatedVideoPath.isNotEmpty
-                  ? 'Generated video title'
-                  : 'Video Title',
+                  ? 'Your Generated video title'
+                  : 'Your video title',
               border: OutlineInputBorder(),
             ),
           ),
@@ -314,7 +329,7 @@ class _UploadScreenState extends State<UploadScreen> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: TextFormField(
-            controller: _descriptionController,
+            controller: widget.descriptionController,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a video description';
@@ -322,17 +337,17 @@ class _UploadScreenState extends State<UploadScreen> {
               return null;
             },
             decoration: InputDecoration(
-              labelText: widget.generatedVideoPath.isNotEmpty
-                  ? 'Generated video description'
-                  : 'Video Description',
-              border: OutlineInputBorder(),
-            ),
+                labelText: widget.generatedVideoPath.isNotEmpty
+                    ? 'Your Generated video description'
+                    : 'Your video description',
+                border: OutlineInputBorder(),
+                alignLabelWithHint: true),
             maxLines: 3,
           ),
         ),
         SizedBox(
             height:
-                40), // Add bottom margin to avoid blocking by the bottom sheet
+                50), // Add bottom margin to avoid blocking by the bottom sheet
       ],
     );
   }
@@ -345,12 +360,17 @@ class _UploadScreenState extends State<UploadScreen> {
     } else if (_selectedVideoFile != null) {
       appBarTitle = 'Upload Picked Video';
     } else {
-      appBarTitle = 'Upload Video';
+      appBarTitle = 'Upload to YouTube';
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(appBarTitle), // Dynamic title
+        title: Text(
+          appBarTitle,
+          style: TextStyle(
+            fontSize: 20,
+          ),
+        ), // Dynamic title
       ),
       body: SingleChildScrollView(
         // Make the entire content scrollable

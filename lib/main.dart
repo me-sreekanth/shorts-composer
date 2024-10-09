@@ -55,10 +55,12 @@ class _AppBodyState extends State<AppBody> {
   String? _backgroundMusicPath;
   String? _watermarkFilePath;
   String? _videoFilePath; // Store the generated video path
-  String _videoTitle = '';
-  String _videoDescription = '';
   bool _isLoading = false;
   bool _isCanceled = false; // Track if the video generation is canceled
+
+  // Add TextEditingControllers for title and description
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
   @override
   void initState() {
@@ -72,6 +74,14 @@ class _AppBodyState extends State<AppBody> {
       });
     });
     _googleSignIn.signInSilently();
+  }
+
+  @override
+  void dispose() {
+    // Dispose the controllers when the widget is disposed
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   Future<void> _requestPermissions() async {
@@ -284,6 +294,9 @@ class _AppBodyState extends State<AppBody> {
           isAuthenticated: _isAuthorized, // Pass the authentication state
           onSignIn: _handleSignIn, // Pass sign-in method
           onSignOut: _handleSignOut, // Pass sign-out method
+          // Pass the title and description controllers
+          titleController: _titleController,
+          descriptionController: _descriptionController,
         );
       default:
         return Center(child: Text("Invalid selection."));
@@ -293,93 +306,49 @@ class _AppBodyState extends State<AppBody> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Compose"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.video_library),
-            onPressed: () {
-              _createAndSaveVideo();
-            },
-          ),
-        ],
-      ),
-      body: _getScreenWidget(_selectedIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-              icon: Icon(Icons.image), label: 'Scenes', tooltip: 'Add scenes'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.voice_chat),
-              label: 'Voiceovers',
-              tooltip: 'Add voiceovers'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.library_music_outlined),
-              label: 'Music & Watermarks',
-              tooltip: 'Add background music and watermarks'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.upload),
-              label: 'Upload',
-              tooltip: 'Upload to YouTube'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
-        unselectedItemColor: Colors.black,
-        onTap: _onItemTapped,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _uploadJson,
-        child: Icon(Icons.upload_file),
-      ),
-    );
-  }
-
-  Future<void> _uploadJson() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
-
-      if (result != null) {
-        if (result.files.single.bytes != null) {
-          String jsonString = String.fromCharCodes(result.files.single.bytes!);
-          if (jsonString.isNotEmpty) {
-            Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-            _processJson(jsonMap);
-          } else {
-            _showError('File content is empty.');
-          }
-        } else if (result.files.single.path != null) {
-          File file = File(result.files.single.path!);
-          String jsonString = await file.readAsString();
-          if (jsonString.isNotEmpty) {
-            Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-            _processJson(jsonMap);
-          } else {
-            _showError('File content is empty.');
-          }
-        } else {
-          _showError('No valid file content.');
-        }
-      } else {
-        _showError('No file selected.');
-      }
-    } catch (e) {
-      _showError('An error occurred while uploading the JSON file.');
-      print(e);
-    }
-  }
-
-  void _processJson(Map<String, dynamic> jsonMap) {
-    List<Scene> scenes = (jsonMap['Scenes'] as List)
-        .map((scene) => Scene.fromJson(scene))
-        .toList();
-
-    setState(() {
-      _scenes = scenes;
-      _videoTitle = jsonMap['Title'];
-      _videoDescription = jsonMap['Description'];
-    });
+        appBar: AppBar(
+          title: const Text("Compose"),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.video_library),
+              onPressed: () {
+                _createAndSaveVideo();
+              },
+            ),
+          ],
+        ),
+        body: _getScreenWidget(_selectedIndex),
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+                icon: Icon(Icons.image),
+                label: 'Scenes',
+                tooltip: 'Add scenes'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.voice_chat),
+                label: 'Voiceovers',
+                tooltip: 'Add voiceovers'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.library_music_outlined),
+                label: 'Music & Watermarks',
+                tooltip: 'Add background music and watermarks'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.upload),
+                label: 'Upload',
+                tooltip: 'Upload to YouTube'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.amber[800],
+          unselectedItemColor: Colors.black,
+          onTap: _onItemTapped,
+          backgroundColor: Colors.white, // Set background color to red
+          type:
+              BottomNavigationBarType.fixed, // Ensure the color can be changed
+        )
+        // floatingActionButton: FloatingActionButton(
+        //   // onPressed: _uploadJson,
+        //   child: Icon(Icons.upload_file),
+        // ),
+        );
   }
 }

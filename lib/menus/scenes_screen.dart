@@ -118,7 +118,12 @@ class _ScenesScreenState extends State<ScenesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Scenes'),
+        title: Text(
+          'Scenes with images ($scenesWithImages/$totalScenes)',
+          style: TextStyle(
+            fontSize: 20,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -147,13 +152,6 @@ class _ScenesScreenState extends State<ScenesScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        // Display the count of added and picked/generated scenes
-                        Text(
-                          'Scenes with Images: $scenesWithImages/$totalScenes',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 10),
                         Expanded(
                           child: ListView.builder(
                             controller: _scrollController,

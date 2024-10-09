@@ -154,7 +154,12 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customize Sound & Watermark'),
+        title: const Text(
+          'Choose background music & watermark',
+          style: TextStyle(
+            fontSize: 20,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
