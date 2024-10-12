@@ -89,6 +89,9 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -338,10 +341,11 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
 
     return DraggableScrollableSheet(
       controller: _scrollableController,
-      initialChildSize: 0.3,
-      minChildSize: 0.2,
-      maxChildSize: 0.7,
-      expand: false,
+      initialChildSize:
+          isTranscriptionAvailable ? 0.3 : 0.3, // Adjust size based on content
+      minChildSize: 0.3, // Minimum size when collapsed
+      maxChildSize: 0.7, // Maximum size when expanded
+      expand: false, // Allow toggling between expand and collapse
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -354,7 +358,10 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           ),
           child: Column(
             children: [
-              _buildExpandCollapseHeader(),
+              // New centered Transcription title with expand/collapse icon
+              _buildTranscriptionTitle(),
+
+              // Scrollable transcription content
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
@@ -381,7 +388,9 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                   ),
                 ),
               ),
-              _buildTranscribeAndPlayerSection(), // Fixed music player + button section at bottom
+
+              // Music player and Transcribe button pinned at the bottom
+              _buildTranscribeAndPlayerSection(),
             ],
           ),
         );
@@ -390,15 +399,20 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   }
 
   Widget _buildTranscribeAndPlayerSection() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
-        SizedBox(height: 16),
-        // Wrap the button with Padding to add margins
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
-          child: SizedBox(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
+      ),
+      child: Column(
+        mainAxisSize:
+            MainAxisSize.min, // Keep player and button aligned at the bottom
+        children: [
+          if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
+          SizedBox(height: 16),
+          // Transcribe button with margin on left, right, and bottom
+          SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _isTranscribing ? null : _transcribeCombinedVoiceovers,
@@ -426,53 +440,42 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildExpandCollapseHeader() {
-    final firstThreeWords = _firstFewWordsFromAss != null
-        ? _firstFewWordsFromAss!.split(' ').take(3).join(' ') + '...'
-        : '';
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isExpanded = !_isExpanded;
-        });
-        _scrollableController.animateTo(
-          _isExpanded ? 0.7 : 0.3,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+  Widget _buildTranscriptionTitle() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Center(
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _isExpanded ? 'Collapse' : 'Transcription of voiceovers',
+              'Transcription',
               style: TextStyle(
-                fontSize: 16.0,
+                fontSize: 18.0,
                 fontWeight: FontWeight.bold,
+                color: Colors.redAccent,
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                  _scrollableController.animateTo(
+                    _isExpanded ? 0.7 : 0.3,
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                });
+              },
+              child: Icon(
+                _isExpanded ? Icons.unfold_more_sharp : Icons.unfold_more_sharp,
                 color: Colors.blueAccent,
               ),
-            ),
-            Flexible(
-              child: Text(
-                firstThreeWords,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.blueAccent,
-                ),
-              ),
-            ),
-            Icon(
-              _isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-              color: Colors.blueAccent,
             ),
           ],
         ),
