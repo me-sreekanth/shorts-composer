@@ -35,12 +35,10 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   bool _isCombinedPlaying = false;
   String? _combinedAudioPath;
   String? _firstFewWordsFromAss;
-  bool _isExpanded = false; // Track if the bottom sheet is expanded
-  List<Map<String, String>> _fullTranscription =
-      []; // To store transcription with timestamps
+  bool _isExpanded = false;
+  List<Map<String, String>> _fullTranscription = [];
   DraggableScrollableController _scrollableController =
       DraggableScrollableController();
-
   final List<TextEditingController> _textControllers = [];
 
   @override
@@ -148,10 +146,8 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         ElevatedButton.icon(
           onPressed: () => _pickVoiceover(index),
           icon: Icon(Icons.upload_file, color: Colors.white),
-          label: Text(
-            'Pick',
-            style: TextStyle(fontSize: 16, color: Colors.white),
-          ),
+          label:
+              Text('Pick', style: TextStyle(fontSize: 16, color: Colors.white)),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blueAccent,
             shape: RoundedRectangleBorder(
@@ -162,10 +158,8 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         ElevatedButton.icon(
           onPressed: () => _generateVoiceover(index),
           icon: Icon(Icons.mic, color: Colors.white),
-          label: Text(
-            'Generate',
-            style: TextStyle(fontSize: 16, color: Colors.white),
-          ),
+          label: Text('Generate',
+              style: TextStyle(fontSize: 16, color: Colors.white)),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orangeAccent,
             shape: RoundedRectangleBorder(
@@ -201,10 +195,9 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     return Text(
       fileName != null ? 'Voiceover: $fileName' : 'No Voiceover',
       style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: scene.voiceoverUrl != null ? Colors.green : Colors.red,
-      ),
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: scene.voiceoverUrl != null ? Colors.green : Colors.red),
     );
   }
 
@@ -341,12 +334,14 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   }
 
   Widget _buildDraggableBottomSheet() {
+    final bool isTranscriptionAvailable = _fullTranscription.isNotEmpty;
+
     return DraggableScrollableSheet(
       controller: _scrollableController,
-      initialChildSize: 0.3, // Initial collapsed size
-      minChildSize: 0.3, // Minimum size when collapsed
-      maxChildSize: 0.7, // Maximum size when expanded
-      expand: false, // Allow dragging and toggling between expand and collapse
+      initialChildSize: 0.3,
+      minChildSize: 0.2,
+      maxChildSize: 0.7,
+      expand: false,
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -359,16 +354,14 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           ),
           child: Column(
             children: [
-              _buildExpandCollapseHeader(), // Expand/Collapse header
-
-              // Transcription data (scrollable content)
+              _buildExpandCollapseHeader(),
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
                   padding: EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      if (_fullTranscription.isNotEmpty)
+                      if (isTranscriptionAvailable)
                         ..._fullTranscription
                             .map(
                               (line) => ListTile(
@@ -377,16 +370,18 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                               ),
                             )
                             .toList(),
+                      if (!isTranscriptionAvailable)
+                        Center(
+                          child: Text(
+                            "No transcription data available.",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
-
-              // Music player + Transcribe button fixed at the bottom
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: _buildTranscribeAndPlayerSection(),
-              ),
+              _buildTranscribeAndPlayerSection(), // Fixed music player + button section at bottom
             ],
           ),
         );
@@ -395,22 +390,44 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   }
 
   Widget _buildTranscribeAndPlayerSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
-      ),
-      child: Column(
-        mainAxisSize:
-            MainAxisSize.min, // Stick the player and button at the bottom
-        children: [
-          if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
-          SizedBox(height: 16),
-          _buildTranscribeButton(),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
+        SizedBox(height: 16),
+        // Wrap the button with Padding to add margins
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isTranscribing ? null : _transcribeCombinedVoiceovers,
+              child: _isTranscribing
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                        SizedBox(width: 16),
+                        Text('Transcribing...',
+                            style: TextStyle(color: Colors.white)),
+                      ],
+                    )
+                  : Text('Transcribe Voiceovers',
+                      style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -418,14 +435,15 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     final firstThreeWords = _firstFewWordsFromAss != null
         ? _firstFewWordsFromAss!.split(' ').take(3).join(' ') + '...'
         : '';
+
     return GestureDetector(
       onTap: () {
         setState(() {
           _isExpanded = !_isExpanded;
         });
         _scrollableController.animateTo(
-          _isExpanded ? 0.7 : 0.2, // Expand or collapse
-          duration: Duration(milliseconds: 500),
+          _isExpanded ? 0.7 : 0.3,
+          duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
       },
@@ -435,7 +453,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _isExpanded ? 'Collapse' : 'Expand',
+              _isExpanded ? 'Collapse' : 'Transcription of voiceovers',
               style: TextStyle(
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
@@ -462,37 +480,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
-  Widget _buildTranscribeButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isTranscribing ? null : _transcribeCombinedVoiceovers,
-        child: _isTranscribing
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                  SizedBox(width: 16),
-                  Text('Transcribing...',
-                      style: TextStyle(color: Colors.white)),
-                ],
-              )
-            : Text('Transcribe Voiceovers',
-                style: TextStyle(color: Colors.white)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.redAccent,
-          padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Handle the transcription process as before
   Future<void> _transcribeCombinedVoiceovers() async {
     if (widget.scenes.any((scene) => scene.voiceoverUrl == null)) {
       _showError("Please pick or generate voiceovers for all scenes.");
@@ -544,9 +531,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         if (dialogueParts.length > 9) {
           final startTime = dialogueParts[1].trim();
           final textPart = dialogueParts[9].replaceAll('\\N', ' ').trim();
-
           final cleanedText = textPart.replaceAll(formattingRegex, '');
-
           transcription.add({
             'timestamp': startTime,
             'text': cleanedText,
