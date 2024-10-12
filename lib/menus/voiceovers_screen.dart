@@ -274,6 +274,12 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     int scenesWithVoiceovers = _getScenesWithVoiceovers();
     int totalScenes = widget.scenes.length;
 
+    // Get the screen height
+    double screenHeight = MediaQuery.of(context).size.height;
+    // Define the bottom sheet height when collapsed (adjust as per your design)
+    double bottomSheetHeightCollapsed =
+        screenHeight * 0.23; // Example value for collapsed height
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -289,20 +295,15 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                 child: widget.scenes.isEmpty
                     ? _buildNoDataMessage()
                     : Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: widget.scenes.length,
-                                itemBuilder: (context, index) {
-                                  final scene = widget.scenes[index];
-                                  final player = _audioPlayers[index];
-                                  return _buildSceneCard(scene, player, index);
-                                },
-                              ),
-                            ),
-                          ],
+                        padding:
+                            EdgeInsets.only(bottom: bottomSheetHeightCollapsed),
+                        child: ListView.builder(
+                          itemCount: widget.scenes.length,
+                          itemBuilder: (context, index) {
+                            final scene = widget.scenes[index];
+                            final player = _audioPlayers[index];
+                            return _buildSceneCard(scene, player, index);
+                          },
                         ),
                       ),
               ),
@@ -628,6 +629,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         if (dialogueParts.length > 9) {
           final startTime = dialogueParts[1].trim();
           final textPart = dialogueParts[9].replaceAll('\\N', ' ').trim();
+          // No case changes, keeping the text exactly as returned
           final cleanedText = textPart.replaceAll(formattingRegex, '');
           transcription.add({
             'timestamp': startTime,

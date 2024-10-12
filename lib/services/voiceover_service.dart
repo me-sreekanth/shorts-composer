@@ -141,7 +141,7 @@ class VoiceoverService {
     for (var word in words) {
       String start = _formatTime(word['start']);
       String end = _formatTime(word['end']);
-      String text = word['punctuated_word'].replaceAll('\n', ' ').toUpperCase();
+      String text = word['punctuated_word'].replaceAll('\n', ' ');
 
       print('Writing subtitle: Start: $start, End: $end, Text: $text');
       sink.writeln(
