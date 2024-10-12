@@ -13,11 +13,26 @@ class VoiceoversScreen extends StatefulWidget {
   final Function(int, String, {bool isLocal}) onVoiceoverSelected;
   final Function(String) onAssFileGenerated;
 
+  // New parameters to manage state across the app
+  final AudioPlayer? combinedAudioPlayer;
+  final bool isCombinedPlaying;
+  final String? combinedAudioPath;
+  final List<Map<String, String>> fullTranscription;
+
+  // Callback to notify the parent of combined player state changes
+  final Function(AudioPlayer, bool, String?, List<Map<String, String>>)
+      onCombinedPlayerUpdate;
+
   VoiceoversScreen({
     required this.scenes,
     required this.apiService,
     required this.onVoiceoverSelected,
     required this.onAssFileGenerated,
+    required this.onCombinedPlayerUpdate, // Add this callback
+    this.combinedAudioPlayer,
+    this.isCombinedPlaying = false,
+    this.combinedAudioPath,
+    this.fullTranscription = const [],
   });
 
   @override
@@ -44,6 +59,12 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Initialize with the values passed from the parent widget
+    _combinedAudioPlayer = widget.combinedAudioPlayer ?? AudioPlayer();
+    _isCombinedPlaying = widget.isCombinedPlaying;
+    _combinedAudioPath = widget.combinedAudioPath;
+    _fullTranscription = widget.fullTranscription;
     _initializePlayers();
     _initializeTextControllers();
   }
@@ -57,10 +78,101 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     }
   }
 
+  // Sync combined player and transcription data with parent
+  void _syncCombinedPlayerState() {
+    widget.onCombinedPlayerUpdate(
+      _combinedAudioPlayer!,
+      _isCombinedPlaying,
+      _combinedAudioPath,
+      _fullTranscription,
+    );
+  }
+
   void _initializeTextControllers() {
     _textControllers.clear();
     for (var scene in widget.scenes) {
       _textControllers.add(TextEditingController(text: scene.text));
+    }
+  }
+
+  Widget _buildCombinedAudioPlayer() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 0.0),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(0.0),
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(_isCombinedPlaying ? Icons.pause : Icons.play_arrow),
+              color: Colors.blueAccent,
+              onPressed: () async {
+                if (_isCombinedPlaying) {
+                  await _combinedAudioPlayer!.pause();
+                } else {
+                  await _combinedAudioPlayer!.play();
+                }
+                setState(() {
+                  _isCombinedPlaying = !_isCombinedPlaying;
+                });
+                _syncCombinedPlayerState(); // Sync with parent
+              },
+            ),
+            Expanded(
+              child: SeekBar(
+                player: _combinedAudioPlayer!,
+                onPlayPause: () {
+                  setState(() {
+                    _isCombinedPlaying = !_isCombinedPlaying;
+                  });
+                  _syncCombinedPlayerState(); // Sync with parent
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _transcribeCombinedVoiceovers() async {
+    setState(() {
+      _isTranscribing = true;
+    });
+
+    try {
+      List<String> voiceoverFiles = widget.scenes
+          .where((scene) => scene.voiceoverUrl != null)
+          .map((scene) => scene.voiceoverUrl!)
+          .toList();
+
+      _combinedAudioPath =
+          await _voiceoverService.combineVoiceovers(voiceoverFiles);
+
+      if (_combinedAudioPath != null) {
+        // Transcribe the combined audio
+        String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
+            _combinedAudioPath!, widget.onAssFileGenerated);
+
+        // Parse the transcription and map to scenes using timestamps
+        _fullTranscription = await _parseAssFileForTranscription(assFilePath);
+
+        _combinedAudioPlayer = AudioPlayer();
+        await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
+
+        // Sync state with parent
+        _syncCombinedPlayerState();
+      }
+    } catch (e) {
+      _showError("Transcription failed: ${e.toString()}");
+    } finally {
+      setState(() {
+        _isTranscribing = false;
+      });
     }
   }
 
@@ -214,48 +326,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCombinedAudioPlayer() {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 0.0),
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(0.0),
-        child: Row(
-          children: [
-            IconButton(
-              icon: Icon(_isCombinedPlaying ? Icons.pause : Icons.play_arrow),
-              color: Colors.blueAccent,
-              onPressed: () async {
-                if (_isCombinedPlaying) {
-                  await _combinedAudioPlayer!.pause();
-                } else {
-                  await _combinedAudioPlayer!.play();
-                }
-                setState(() {
-                  _isCombinedPlaying = !_isCombinedPlaying;
-                });
-              },
-            ),
-            Expanded(
-              child: SeekBar(
-                player: _combinedAudioPlayer!,
-                onPlayPause: () {
-                  setState(() {
-                    _isCombinedPlaying = !_isCombinedPlaying;
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -464,49 +534,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _transcribeCombinedVoiceovers() async {
-    setState(() {
-      _isTranscribing = true;
-    });
-
-    try {
-      List<String> voiceoverFiles = widget.scenes
-          .where((scene) => scene.voiceoverUrl != null)
-          .map((scene) => scene.voiceoverUrl!)
-          .toList();
-
-      _combinedAudioPath =
-          await _voiceoverService.combineVoiceovers(voiceoverFiles);
-
-      if (_combinedAudioPath != null) {
-        // Transcribe the combined audio
-        String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
-            _combinedAudioPath!, widget.onAssFileGenerated);
-
-        // Parse the transcription and map to scenes using timestamps
-        _fullTranscription = await _parseAssFileForTranscription(assFilePath);
-        _mapTranscriptionToScenes(_fullTranscription);
-
-        _combinedAudioPlayer = AudioPlayer();
-        await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
-
-        // Open the bottom sheet after transcription
-        _scrollableController.animateTo(
-          0.7,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-    } catch (e) {
-      _showError("Transcription failed: ${e.toString()}");
-    } finally {
-      setState(() {
-        _isTranscribing =
-            false; // Reset transcription progress after completion
-      });
-    }
   }
 
   Future<void> _mapTranscriptionToScenes(

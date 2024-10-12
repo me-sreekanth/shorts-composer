@@ -13,6 +13,7 @@ import 'package:shorts_composer/menus/voiceovers_screen.dart';
 import 'package:shorts_composer/menus/upload_screen.dart';
 import 'package:path/path.dart' as p;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:just_audio/just_audio.dart'; // Import for audio player
 
 void main() {
   runApp(App());
@@ -62,6 +63,12 @@ class _AppBodyState extends State<AppBody> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
+// State for combined player and transcription data
+  AudioPlayer _combinedAudioPlayer = AudioPlayer();
+  bool _isCombinedPlaying = false;
+  String? _combinedAudioPath;
+  List<Map<String, String>> _fullTranscription = [];
+
   @override
   void initState() {
     super.initState();
@@ -74,13 +81,17 @@ class _AppBodyState extends State<AppBody> {
       });
     });
     _googleSignIn.signInSilently();
+
+    // Initialize audio player
+    _combinedAudioPlayer = AudioPlayer();
   }
 
   @override
   void dispose() {
-    // Dispose the controllers when the widget is disposed
+    // Dispose the controllers and audio player when the widget is disposed
     _titleController.dispose();
     _descriptionController.dispose();
+    _combinedAudioPlayer?.dispose();
     super.dispose();
   }
 
@@ -257,14 +268,17 @@ class _AppBodyState extends State<AppBody> {
       case 1:
         return VoiceoversScreen(
           scenes: _scenes,
-          apiService: _apiService,
+          apiService: ApiService(), // Your ApiService instance
+          combinedAudioPlayer: _combinedAudioPlayer,
+          isCombinedPlaying: _isCombinedPlaying,
+          combinedAudioPath: _combinedAudioPath,
+          fullTranscription: _fullTranscription,
 
-          // Handle the generated .ass file and update _assFilePath
+          // Handle transcription file generation
           onAssFileGenerated: (String assFilePath) {
             setState(() {
               _assFilePath = assFilePath;
             });
-            print('ASS File Generated: $assFilePath');
           },
 
           // Handle voiceover selection
@@ -273,7 +287,17 @@ class _AppBodyState extends State<AppBody> {
             setState(() {
               _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
             });
-            print('Voiceover selected for scene $index: $voiceoverUrl');
+          },
+
+          // Callback to sync combined player and transcription data
+          onCombinedPlayerUpdate: (AudioPlayer player, bool isPlaying,
+              String? audioPath, List<Map<String, String>> transcription) {
+            setState(() {
+              _combinedAudioPlayer = player;
+              _isCombinedPlaying = isPlaying;
+              _combinedAudioPath = audioPath;
+              _fullTranscription = transcription;
+            });
           },
         );
       case 2:
@@ -344,11 +368,6 @@ class _AppBodyState extends State<AppBody> {
           backgroundColor: Colors.white, // Set background color to red
           type:
               BottomNavigationBarType.fixed, // Ensure the color can be changed
-        )
-        // floatingActionButton: FloatingActionButton(
-        //   // onPressed: _uploadJson,
-        //   child: Icon(Icons.upload_file),
-        // ),
-        );
+        ));
   }
 }
