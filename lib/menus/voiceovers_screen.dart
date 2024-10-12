@@ -35,8 +35,12 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   bool _isCombinedPlaying = false;
   String? _combinedAudioPath;
   String? _firstFewWordsFromAss;
+  bool _isExpanded = false; // Track if the bottom sheet is expanded
+  List<Map<String, String>> _fullTranscription =
+      []; // To store transcription with timestamps
+  DraggableScrollableController _scrollableController =
+      DraggableScrollableController();
 
-  // Store TextEditingController for each scene
   final List<TextEditingController> _textControllers = [];
 
   @override
@@ -49,76 +53,17 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   void _initializePlayers() {
     _audioPlayers.clear();
     _isPlaying.clear();
-
     for (var i = 0; i < widget.scenes.length; i++) {
       _audioPlayers.add(AudioPlayer());
       _isPlaying.add(false);
     }
   }
 
-  // Initialize TextEditingControllers
   void _initializeTextControllers() {
     _textControllers.clear();
     for (var scene in widget.scenes) {
       _textControllers.add(TextEditingController(text: scene.text));
     }
-  }
-
-  @override
-  void dispose() {
-    // Dispose all TextEditingControllers
-    for (var controller in _textControllers) {
-      controller.dispose();
-    }
-    _combinedAudioPlayer?.dispose();
-    _audioPlayers.forEach((player) => player.dispose());
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    int scenesWithVoiceovers = _getScenesWithVoiceovers();
-    int totalScenes = widget.scenes.length;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Voiceovers for scenes ($scenesWithVoiceovers/$totalScenes)',
-          style: TextStyle(
-            fontSize: 20,
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: widget.scenes.isEmpty
-                ? _buildNoDataMessage() // Show no data message if scenes list is empty
-                : Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 0.0, vertical: 0.0),
-                            itemCount: widget.scenes.length,
-                            itemBuilder: (context, index) {
-                              final scene = widget.scenes[index];
-                              final player = _audioPlayers[index];
-                              return _buildSceneCard(scene, player, index);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-          if (widget.scenes.isNotEmpty) _buildBottomSheet(),
-          if (_isLoading) CircularProgressIndicator(),
-        ],
-      ),
-    );
   }
 
   Widget _buildNoDataMessage() {
@@ -165,35 +110,35 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
-  Widget _buildSceneTextField(Scene scene, int index) {
-    return TextField(
-      controller: _textControllers[index],
-      onChanged: (newText) {
-        setState(() {
-          scene.text = newText;
-        });
-      },
-      decoration: InputDecoration(
-        labelText: 'Scene Text',
-        labelStyle: TextStyle(fontSize: 16, color: Colors.blueGrey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-      ),
-    );
+  Future<void> _pickVoiceover(int index) async {
+    String? filePath = await _voiceoverService.pickVoiceover();
+    if (filePath != null) {
+      widget.onVoiceoverSelected(index, filePath, isLocal: true);
+      await _audioPlayers[index].setFilePath(filePath);
+    }
   }
 
-  Widget _buildVoiceoverStatus(Scene scene) {
-    String? fileName =
-        scene.voiceoverUrl != null ? p.basename(scene.voiceoverUrl!) : null;
-    return Text(
-      fileName != null ? 'Voiceover: $fileName' : 'No Voiceover',
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: scene.voiceoverUrl != null ? Colors.green : Colors.red,
-      ),
-    );
+  Future<void> _generateVoiceover(int index) async {
+    setState(() {
+      _isLoading = true;
+      _loadingIndex = index;
+    });
+    try {
+      final scene = widget.scenes[index];
+      final voiceoverFilePath = await _voiceoverService.generateVoiceover(
+          scene.text, scene.sceneNumber, widget.apiService);
+      if (voiceoverFilePath != null) {
+        widget.onVoiceoverSelected(index, voiceoverFilePath, isLocal: true);
+        await _audioPlayers[index].setFilePath(voiceoverFilePath);
+      } else {
+        _showError('Failed to generate voiceover.');
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+        _loadingIndex = -1;
+      });
+    }
   }
 
   Widget _buildActionButtons(int index) {
@@ -232,6 +177,37 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
+  Widget _buildSceneTextField(Scene scene, int index) {
+    return TextField(
+      controller: _textControllers[index],
+      onChanged: (newText) {
+        setState(() {
+          scene.text = newText;
+        });
+      },
+      decoration: InputDecoration(
+        labelText: 'Scene Text',
+        labelStyle: TextStyle(fontSize: 16, color: Colors.blueGrey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoiceoverStatus(Scene scene) {
+    String? fileName =
+        scene.voiceoverUrl != null ? p.basename(scene.voiceoverUrl!) : null;
+    return Text(
+      fileName != null ? 'Voiceover: $fileName' : 'No Voiceover',
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: scene.voiceoverUrl != null ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
   Widget _buildAudioPlayerControls(AudioPlayer player, int index) {
     return Row(
       children: [
@@ -260,48 +236,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBottomSheet() {
-    return Container(
-      width: double.infinity, // Full screen width
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16.0),
-          topRight: Radius.circular(16.0),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center, // Centering content
-          children: [
-            if (_firstFewWordsFromAss != null &&
-                _firstFewWordsFromAss!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  _firstFewWordsFromAss!,
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2, // Limit to 2 lines
-                  overflow: TextOverflow.ellipsis, // Ellipsis at the end
-                ),
-              ),
-            if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
-            SizedBox(height: 16),
-            _buildTranscribeButton(),
-          ],
-        ),
-      ),
     );
   }
 
@@ -347,9 +281,181 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
+  @override
+  void dispose() {
+    for (var controller in _textControllers) {
+      controller.dispose();
+    }
+    _combinedAudioPlayer?.dispose();
+    _audioPlayers.forEach((player) => player.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    int scenesWithVoiceovers = _getScenesWithVoiceovers();
+    int totalScenes = widget.scenes.length;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Voiceovers for scenes ($scenesWithVoiceovers/$totalScenes)',
+          style: TextStyle(fontSize: 20),
+        ),
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(
+                child: widget.scenes.isEmpty
+                    ? _buildNoDataMessage()
+                    : Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: widget.scenes.length,
+                                itemBuilder: (context, index) {
+                                  final scene = widget.scenes[index];
+                                  final player = _audioPlayers[index];
+                                  return _buildSceneCard(scene, player, index);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          ),
+          // Align to the bottom of the screen
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: _buildDraggableBottomSheet(),
+          ),
+          if (_isLoading) CircularProgressIndicator(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDraggableBottomSheet() {
+    return DraggableScrollableSheet(
+      controller: _scrollableController,
+      initialChildSize: 0.2, // Initial collapsed size
+      minChildSize: 0.2, // Minimum size when collapsed
+      maxChildSize: 0.7, // Maximum size when expanded
+      expand: false, // Allow dragging and toggling between expand and collapse
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16.0),
+              topRight: Radius.circular(16.0),
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildExpandCollapseHeader(), // Expand/Collapse header
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: EdgeInsets.all(16.0),
+                  children: [
+                    if (_fullTranscription.isNotEmpty)
+                      ..._fullTranscription
+                          .map(
+                            (line) => ListTile(
+                              title: Text(line['text']!),
+                              subtitle: Text(line['timestamp']!),
+                            ),
+                          )
+                          .toList(),
+                    _buildTranscribeAndPlayerSection(), // Always visible section
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExpandCollapseHeader() {
+    final firstThreeWords = _firstFewWordsFromAss != null
+        ? _firstFewWordsFromAss!.split(' ').take(3).join(' ') + '...'
+        : '';
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isExpanded = !_isExpanded;
+        });
+        _scrollableController.animateTo(
+          _isExpanded ? 0.7 : 0.2, // Expand or collapse
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _isExpanded ? 'Collapse' : 'Expand',
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueAccent,
+              ),
+            ),
+            Flexible(
+              child: Text(
+                firstThreeWords,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.blueAccent,
+                ),
+              ),
+            ),
+            Icon(
+              _isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+              color: Colors.blueAccent,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTranscribeAndPlayerSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
+          SizedBox(height: 16),
+          _buildTranscribeButton(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTranscribeButton() {
     return SizedBox(
-      width: double.infinity, // Full width for the button
+      width: double.infinity,
       child: ElevatedButton(
         onPressed: _isTranscribing ? null : _transcribeCombinedVoiceovers,
         child: _isTranscribing
@@ -377,39 +483,8 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
-  Future<void> _pickVoiceover(int index) async {
-    String? filePath = await _voiceoverService.pickVoiceover();
-    if (filePath != null) {
-      widget.onVoiceoverSelected(index, filePath, isLocal: true);
-      await _audioPlayers[index].setFilePath(filePath);
-    }
-  }
-
-  Future<void> _generateVoiceover(int index) async {
-    setState(() {
-      _isLoading = true;
-      _loadingIndex = index;
-    });
-    try {
-      final scene = widget.scenes[index];
-      final voiceoverFilePath = await _voiceoverService.generateVoiceover(
-          scene.text, scene.sceneNumber, widget.apiService);
-      if (voiceoverFilePath != null) {
-        widget.onVoiceoverSelected(index, voiceoverFilePath, isLocal: true);
-        await _audioPlayers[index].setFilePath(voiceoverFilePath);
-      } else {
-        _showError('Failed to generate voiceover.');
-      }
-    } finally {
-      setState(() {
-        _isLoading = false;
-        _loadingIndex = -1;
-      });
-    }
-  }
-
+  // Handle the transcription process as before
   Future<void> _transcribeCombinedVoiceovers() async {
-    // Check if all scenes have voiceovers
     if (widget.scenes.any((scene) => scene.voiceoverUrl == null)) {
       _showError("Please pick or generate voiceovers for all scenes.");
       return;
@@ -431,8 +506,10 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
           _combinedAudioPath!, widget.onAssFileGenerated);
 
-      // Extract the first few words from the .ass file
-      _firstFewWordsFromAss = await _getFirstFewWordsFromAssFile(assFilePath);
+      _fullTranscription = await _parseAssFileForTranscription(assFilePath);
+      _firstFewWordsFromAss = _fullTranscription.isNotEmpty
+          ? _fullTranscription.first['text']
+          : null;
 
       _combinedAudioPlayer = AudioPlayer();
       await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
@@ -445,29 +522,30 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     });
   }
 
-  Future<String> _getFirstFewWordsFromAssFile(String assFilePath) async {
+  Future<List<Map<String, String>>> _parseAssFileForTranscription(
+      String assFilePath) async {
+    final List<Map<String, String>> transcription = [];
     final assFile = await File(assFilePath).readAsString();
     final lines = assFile.split('\n');
-    List<String> words = [];
-
-    // Regex to match and remove ASS formatting codes
     RegExp formattingRegex = RegExp(r'{\\.*?}');
 
     for (String line in lines) {
       if (line.startsWith('Dialogue:')) {
         final dialogueParts = line.split(',');
         if (dialogueParts.length > 9) {
+          final startTime = dialogueParts[1].trim();
           final textPart = dialogueParts[9].replaceAll('\\N', ' ').trim();
 
-          // Remove formatting codes
           final cleanedText = textPart.replaceAll(formattingRegex, '');
 
-          words.addAll(cleanedText.split(' '));
+          transcription.add({
+            'timestamp': startTime,
+            'text': cleanedText,
+          });
         }
       }
     }
-
-    return words.join(' ');
+    return transcription;
   }
 
   void _showError(String message) {
