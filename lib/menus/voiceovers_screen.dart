@@ -343,8 +343,8 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   Widget _buildDraggableBottomSheet() {
     return DraggableScrollableSheet(
       controller: _scrollableController,
-      initialChildSize: 0.3, // Increased initial collapsed size to fit contents
-      minChildSize: 0.3, // Set minimum size to avoid overflow when collapsed
+      initialChildSize: 0.3, // Initial collapsed size
+      minChildSize: 0.3, // Minimum size when collapsed
       maxChildSize: 0.7, // Maximum size when expanded
       expand: false, // Allow dragging and toggling between expand and collapse
       builder: (context, scrollController) {
@@ -361,8 +361,8 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
             children: [
               _buildExpandCollapseHeader(), // Expand/Collapse header
 
-              // Make the list scrollable with Flexible
-              Flexible(
+              // Transcription data (scrollable content)
+              Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
                   padding: EdgeInsets.all(16.0),
@@ -382,8 +382,11 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                 ),
               ),
 
-              // Fixed player and button at the bottom
-              _buildTranscribeAndPlayerSection(), // Always visible section
+              // Music player + Transcribe button fixed at the bottom
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _buildTranscribeAndPlayerSection(),
+              ),
             ],
           ),
         );
