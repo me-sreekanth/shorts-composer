@@ -174,24 +174,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
-  Widget _buildSceneTextField(Scene scene, int index) {
-    return TextField(
-      controller: _textControllers[index],
-      onChanged: (newText) {
-        setState(() {
-          scene.text = newText;
-        });
-      },
-      decoration: InputDecoration(
-        labelText: 'Scene Text',
-        labelStyle: TextStyle(fontSize: 16, color: Colors.blueGrey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-      ),
-    );
-  }
-
   Widget _buildVoiceoverStatus(Scene scene) {
     String? fileName =
         scene.voiceoverUrl != null ? p.basename(scene.voiceoverUrl!) : null;
@@ -493,6 +475,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       _isTranscribing = true;
     });
 
+    // Combine the voiceovers into one audio file
     List<String> voiceoverFiles = widget.scenes
         .where((scene) => scene.voiceoverUrl != null)
         .map((scene) => scene.voiceoverUrl!)
@@ -502,16 +485,23 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         await _voiceoverService.combineVoiceovers(voiceoverFiles);
 
     if (_combinedAudioPath != null) {
+      // Transcribe the combined voiceover
       String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
           _combinedAudioPath!, widget.onAssFileGenerated);
 
+      // Parse the ASS file and map the transcription to scenes
       _fullTranscription = await _parseAssFileForTranscription(assFilePath);
-      _firstFewWordsFromAss = _fullTranscription.isNotEmpty
-          ? _fullTranscription.first['text']
-          : null;
+      _mapTranscriptionToScenes(_fullTranscription);
 
       _combinedAudioPlayer = AudioPlayer();
       await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
+
+      // Expand the bottom sheet after successful transcription
+      _scrollableController.animateTo(
+        0.7, // Fully expanded
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     } else {
       _showError("No voiceovers available to combine.");
     }
@@ -519,6 +509,78 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     setState(() {
       _isTranscribing = false;
     });
+  }
+
+  void _mapTranscriptionToScenes(List<Map<String, String>> transcription) {
+    int currentSceneIndex = 0;
+    int sceneStartTime = 0;
+    String accumulatedText = ''; // Text that spans multiple scenes
+
+    for (var i = 0; i < transcription.length; i++) {
+      var line = transcription[i];
+      int timestampInMs = _convertTimestampToMilliseconds(line['timestamp']!);
+
+      while (currentSceneIndex < widget.scenes.length) {
+        int sceneEndTime =
+            sceneStartTime + widget.scenes[currentSceneIndex].duration * 1000;
+
+        if (timestampInMs >= sceneStartTime && timestampInMs <= sceneEndTime) {
+          setState(() {
+            // Append the accumulated text from previous scenes
+            widget.scenes[currentSceneIndex].text +=
+                accumulatedText + ' ${line['text']}';
+            _textControllers[currentSceneIndex].text =
+                widget.scenes[currentSceneIndex].text;
+          });
+          accumulatedText = ''; // Reset accumulated text
+          break;
+        }
+
+        // Accumulate text if it spans across scenes
+        accumulatedText += ' ${line['text']}';
+
+        // Move to the next scene
+        currentSceneIndex++;
+        sceneStartTime = sceneEndTime;
+
+        if (currentSceneIndex >= widget.scenes.length) {
+          break;
+        }
+      }
+    }
+  }
+
+  Widget _buildSceneTextField(Scene scene, int index) {
+    return TextField(
+      controller: _textControllers[index],
+      onChanged: (newText) {
+        setState(() {
+          scene.text = newText;
+        });
+      },
+      maxLines: null, // Allow the TextField to expand vertically
+      decoration: InputDecoration(
+        labelText: 'Scene Text',
+        labelStyle: TextStyle(fontSize: 16, color: Colors.blueGrey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+    );
+  }
+
+  int _convertTimestampToMilliseconds(String timestamp) {
+    final parts = timestamp.split(':');
+    final hours = int.parse(parts[0]);
+    final minutes = int.parse(parts[1]);
+    final secondsAndMilliseconds = parts[2].split('.');
+    final seconds = int.parse(secondsAndMilliseconds[0]);
+    final milliseconds = int.parse(secondsAndMilliseconds[1]);
+
+    return (hours * 3600000) +
+        (minutes * 60000) +
+        (seconds * 1000) +
+        milliseconds;
   }
 
   Future<List<Map<String, String>>> _parseAssFileForTranscription(
