@@ -466,88 +466,134 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   }
 
   Future<void> _transcribeCombinedVoiceovers() async {
-    if (widget.scenes.any((scene) => scene.voiceoverUrl == null)) {
-      _showError("Please pick or generate voiceovers for all scenes.");
-      return;
-    }
-
     setState(() {
       _isTranscribing = true;
     });
 
-    // Combine the voiceovers into one audio file
-    List<String> voiceoverFiles = widget.scenes
-        .where((scene) => scene.voiceoverUrl != null)
-        .map((scene) => scene.voiceoverUrl!)
-        .toList();
+    try {
+      List<String> voiceoverFiles = widget.scenes
+          .where((scene) => scene.voiceoverUrl != null)
+          .map((scene) => scene.voiceoverUrl!)
+          .toList();
 
-    _combinedAudioPath =
-        await _voiceoverService.combineVoiceovers(voiceoverFiles);
+      _combinedAudioPath =
+          await _voiceoverService.combineVoiceovers(voiceoverFiles);
 
-    if (_combinedAudioPath != null) {
-      // Transcribe the combined voiceover
-      String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
-          _combinedAudioPath!, widget.onAssFileGenerated);
+      if (_combinedAudioPath != null) {
+        // Transcribe the combined audio
+        String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
+            _combinedAudioPath!, widget.onAssFileGenerated);
 
-      // Parse the ASS file and map the transcription to scenes
-      _fullTranscription = await _parseAssFileForTranscription(assFilePath);
-      _mapTranscriptionToScenes(_fullTranscription);
+        // Parse the transcription and map to scenes using timestamps
+        _fullTranscription = await _parseAssFileForTranscription(assFilePath);
+        _mapTranscriptionToScenes(_fullTranscription);
 
-      _combinedAudioPlayer = AudioPlayer();
-      await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
+        _combinedAudioPlayer = AudioPlayer();
+        await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
 
-      // Expand the bottom sheet after successful transcription
-      _scrollableController.animateTo(
-        0.7, // Fully expanded
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      _showError("No voiceovers available to combine.");
+        // Open the bottom sheet after transcription
+        _scrollableController.animateTo(
+          0.7,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    } catch (e) {
+      _showError("Transcription failed: ${e.toString()}");
+    } finally {
+      setState(() {
+        _isTranscribing =
+            false; // Reset transcription progress after completion
+      });
     }
-
-    setState(() {
-      _isTranscribing = false;
-    });
   }
 
-  void _mapTranscriptionToScenes(List<Map<String, String>> transcription) {
+  Future<void> _mapTranscriptionToScenes(
+      List<Map<String, String>> transcription) async {
+    int cumulativeStartTime = 0;
     int currentSceneIndex = 0;
-    int sceneStartTime = 0;
-    String accumulatedText = ''; // Text that spans multiple scenes
+    String accumulatedText =
+        ''; // For storing accumulated text for the current scene
 
-    for (var i = 0; i < transcription.length; i++) {
-      var line = transcription[i];
-      int timestampInMs = _convertTimestampToMilliseconds(line['timestamp']!);
+    print('--- Starting transcription mapping ---');
 
-      while (currentSceneIndex < widget.scenes.length) {
-        int sceneEndTime =
-            sceneStartTime + widget.scenes[currentSceneIndex].duration * 1000;
+    // Iterate through scenes
+    while (currentSceneIndex < widget.scenes.length) {
+      Scene currentScene = widget.scenes[currentSceneIndex];
+      int sceneDurationInMs = await _getAudioDurationForScene(currentScene);
+      int sceneEndTime = cumulativeStartTime + sceneDurationInMs;
 
-        if (timestampInMs >= sceneStartTime && timestampInMs <= sceneEndTime) {
+      print(
+          'Processing scene: ${currentSceneIndex + 1} (start: $cumulativeStartTime ms, end: $sceneEndTime ms)');
+
+      // Accumulate transcription text for the current scene
+      for (int i = 0; i < transcription.length; i++) {
+        var line = transcription[i];
+        int timestampInMs = _convertTimestampToMilliseconds(line['timestamp']!);
+
+        // Ensure accurate timestamp comparison
+        if (timestampInMs >= cumulativeStartTime &&
+            timestampInMs < sceneEndTime) {
+          accumulatedText += ' ${line['text']}';
+        }
+
+        // If the timestamp exceeds the scene boundary or it's the last transcription item
+        if (timestampInMs >= sceneEndTime || i == transcription.length - 1) {
+          // Assign accumulated text to the current scene
           setState(() {
-            // Append the accumulated text from previous scenes
-            widget.scenes[currentSceneIndex].text +=
-                accumulatedText + ' ${line['text']}';
+            widget.scenes[currentSceneIndex].text = accumulatedText.trim();
             _textControllers[currentSceneIndex].text =
                 widget.scenes[currentSceneIndex].text;
           });
-          accumulatedText = ''; // Reset accumulated text
-          break;
-        }
 
-        // Accumulate text if it spans across scenes
-        accumulatedText += ' ${line['text']}';
+          print(
+              'Assigned text to scene ${currentSceneIndex + 1}: "${accumulatedText.trim()}"');
 
-        // Move to the next scene
-        currentSceneIndex++;
-        sceneStartTime = sceneEndTime;
+          // Prepare for the next scene
+          currentSceneIndex++;
+          if (currentSceneIndex < widget.scenes.length) {
+            cumulativeStartTime = sceneEndTime;
+            accumulatedText = ''; // Reset accumulated text for the next scene
+          } else {
+            // If no more scenes, stop processing
+            print('No more scenes left to process');
+            return;
+          }
 
-        if (currentSceneIndex >= widget.scenes.length) {
-          break;
+          break; // Break to process the next scene
         }
       }
     }
+
+    print('--- Transcription mapping completed ---');
+  }
+
+  Future<int> _getAudioDurationForScene(Scene scene) async {
+    if (scene.voiceoverUrl != null && scene.isLocalVoiceover) {
+      final audioPlayer = AudioPlayer();
+      try {
+        final duration = await audioPlayer.setFilePath(scene.voiceoverUrl!);
+        return duration?.inMilliseconds ??
+            scene.duration * 1000; // Fallback if no duration is available
+      } catch (e) {
+        return scene.duration * 1000;
+      }
+    }
+    return scene.duration * 1000;
+  }
+
+  int _convertTimestampToMilliseconds(String timestamp) {
+    final parts = timestamp.split(':');
+    final hours = int.parse(parts[0]);
+    final minutes = int.parse(parts[1]);
+    final secondsAndMilliseconds = parts[2].split('.');
+    final seconds = int.parse(secondsAndMilliseconds[0]);
+    final milliseconds = int.parse(secondsAndMilliseconds[1]);
+
+    return (hours * 3600000) +
+        (minutes * 60000) +
+        (seconds * 1000) +
+        milliseconds;
   }
 
   Widget _buildSceneTextField(Scene scene, int index) {
@@ -567,20 +613,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         ),
       ),
     );
-  }
-
-  int _convertTimestampToMilliseconds(String timestamp) {
-    final parts = timestamp.split(':');
-    final hours = int.parse(parts[0]);
-    final minutes = int.parse(parts[1]);
-    final secondsAndMilliseconds = parts[2].split('.');
-    final seconds = int.parse(secondsAndMilliseconds[0]);
-    final milliseconds = int.parse(secondsAndMilliseconds[1]);
-
-    return (hours * 3600000) +
-        (minutes * 60000) +
-        (seconds * 1000) +
-        milliseconds;
   }
 
   Future<List<Map<String, String>>> _parseAssFileForTranscription(
