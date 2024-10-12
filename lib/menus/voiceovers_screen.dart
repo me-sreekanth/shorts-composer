@@ -330,7 +330,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
               ),
             ],
           ),
-          // Align to the bottom of the screen
           Align(
             alignment: Alignment.bottomCenter,
             child: _buildDraggableBottomSheet(),
@@ -344,8 +343,8 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   Widget _buildDraggableBottomSheet() {
     return DraggableScrollableSheet(
       controller: _scrollableController,
-      initialChildSize: 0.2, // Initial collapsed size
-      minChildSize: 0.2, // Minimum size when collapsed
+      initialChildSize: 0.3, // Increased initial collapsed size to fit contents
+      minChildSize: 0.3, // Set minimum size to avoid overflow when collapsed
       maxChildSize: 0.7, // Maximum size when expanded
       expand: false, // Allow dragging and toggling between expand and collapse
       builder: (context, scrollController) {
@@ -361,28 +360,54 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           child: Column(
             children: [
               _buildExpandCollapseHeader(), // Expand/Collapse header
-              Expanded(
-                child: ListView(
+
+              // Make the list scrollable with Flexible
+              Flexible(
+                child: SingleChildScrollView(
                   controller: scrollController,
                   padding: EdgeInsets.all(16.0),
-                  children: [
-                    if (_fullTranscription.isNotEmpty)
-                      ..._fullTranscription
-                          .map(
-                            (line) => ListTile(
-                              title: Text(line['text']!),
-                              subtitle: Text(line['timestamp']!),
-                            ),
-                          )
-                          .toList(),
-                    _buildTranscribeAndPlayerSection(), // Always visible section
-                  ],
+                  child: Column(
+                    children: [
+                      if (_fullTranscription.isNotEmpty)
+                        ..._fullTranscription
+                            .map(
+                              (line) => ListTile(
+                                title: Text(line['text']!),
+                                subtitle: Text(line['timestamp']!),
+                              ),
+                            )
+                            .toList(),
+                    ],
+                  ),
                 ),
               ),
+
+              // Fixed player and button at the bottom
+              _buildTranscribeAndPlayerSection(), // Always visible section
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTranscribeAndPlayerSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
+      ),
+      child: Column(
+        mainAxisSize:
+            MainAxisSize.min, // Stick the player and button at the bottom
+        children: [
+          if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
+          SizedBox(height: 16),
+          _buildTranscribeButton(),
+        ],
+      ),
     );
   }
 
@@ -430,25 +455,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTranscribeAndPlayerSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey.shade300)],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_combinedAudioPlayer != null) _buildCombinedAudioPlayer(),
-          SizedBox(height: 16),
-          _buildTranscribeButton(),
-        ],
       ),
     );
   }
