@@ -69,6 +69,28 @@ class _AppBodyState extends State<AppBody> {
   String? _combinedAudioPath;
   List<Map<String, String>> _fullTranscription = [];
 
+  // Method to update transcription data from VoiceoversScreen
+  void _updateFullTranscription(List<Map<String, String>> transcription) {
+    setState(() {
+      _fullTranscription = transcription; // Update the transcription state
+    });
+  }
+
+  // Method to handle combined player state and transcription data
+  void _onCombinedPlayerUpdate(
+    AudioPlayer player,
+    bool isPlaying,
+    String? audioPath,
+    List<Map<String, String>> transcription,
+  ) {
+    setState(() {
+      _combinedAudioPlayer = player;
+      _isCombinedPlaying = isPlaying;
+      _combinedAudioPath = audioPath;
+      _fullTranscription = transcription; // Update transcription data
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -234,6 +256,13 @@ class _AppBodyState extends State<AppBody> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  // Method to update the scene text in the list
+  void _updateSceneText(int index, String newText) {
+    setState(() {
+      _scenes[index].text = newText; // Update the text of the specific scene
+    });
+  }
+
   Widget _getScreenWidget(int index) {
     switch (index) {
       case 0:
@@ -268,37 +297,25 @@ class _AppBodyState extends State<AppBody> {
       case 1:
         return VoiceoversScreen(
           scenes: _scenes,
-          apiService: ApiService(), // Your ApiService instance
+          apiService: ApiService(),
           combinedAudioPlayer: _combinedAudioPlayer,
           isCombinedPlaying: _isCombinedPlaying,
           combinedAudioPath: _combinedAudioPath,
-          fullTranscription: _fullTranscription,
-
-          // Handle transcription file generation
+          fullTranscription: _fullTranscription, // Pass the transcription data
           onAssFileGenerated: (String assFilePath) {
             setState(() {
               _assFilePath = assFilePath;
             });
           },
-
-          // Handle voiceover selection
           onVoiceoverSelected: (int index, String voiceoverUrl,
               {bool isLocal = false}) {
             setState(() {
               _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
             });
           },
-
-          // Callback to sync combined player and transcription data
-          onCombinedPlayerUpdate: (AudioPlayer player, bool isPlaying,
-              String? audioPath, List<Map<String, String>> transcription) {
-            setState(() {
-              _combinedAudioPlayer = player;
-              _isCombinedPlaying = isPlaying;
-              _combinedAudioPath = audioPath;
-              _fullTranscription = transcription;
-            });
-          },
+          onCombinedPlayerUpdate:
+              _onCombinedPlayerUpdate, // Update combined player state
+          onSceneTextUpdated: _updateSceneText,
         );
       case 2:
         return SoundsWatermarkScreen(

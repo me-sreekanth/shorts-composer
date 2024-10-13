@@ -12,14 +12,15 @@ class VoiceoversScreen extends StatefulWidget {
   final ApiService apiService;
   final Function(int, String, {bool isLocal}) onVoiceoverSelected;
   final Function(String) onAssFileGenerated;
+  final Function(int, String)
+      onSceneTextUpdated; // New callback to update scene text
 
-  // New parameters to manage state across the app
+  // Additional state-related parameters for combined audio
   final AudioPlayer? combinedAudioPlayer;
   final bool isCombinedPlaying;
   final String? combinedAudioPath;
   final List<Map<String, String>> fullTranscription;
 
-  // Callback to notify the parent of combined player state changes
   final Function(AudioPlayer, bool, String?, List<Map<String, String>>)
       onCombinedPlayerUpdate;
 
@@ -28,7 +29,8 @@ class VoiceoversScreen extends StatefulWidget {
     required this.apiService,
     required this.onVoiceoverSelected,
     required this.onAssFileGenerated,
-    required this.onCombinedPlayerUpdate, // Add this callback
+    required this.onSceneTextUpdated, // Initialize the callback
+    required this.onCombinedPlayerUpdate,
     this.combinedAudioPlayer,
     this.isCombinedPlaying = false,
     this.combinedAudioPath,
@@ -154,18 +156,24 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           await _voiceoverService.combineVoiceovers(voiceoverFiles);
 
       if (_combinedAudioPath != null) {
-        // Transcribe the combined audio
         String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
             _combinedAudioPath!, widget.onAssFileGenerated);
 
-        // Parse the transcription and map to scenes using timestamps
         _fullTranscription = await _parseAssFileForTranscription(assFilePath);
+
+        // Map the transcription data to scenes
+        await _mapTranscriptionToScenes(_fullTranscription);
 
         _combinedAudioPlayer = AudioPlayer();
         await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
 
-        // Sync state with parent
-        _syncCombinedPlayerState();
+        // Sync state with parent, including transcription data
+        widget.onCombinedPlayerUpdate(
+          _combinedAudioPlayer!,
+          _isCombinedPlaying,
+          _combinedAudioPath,
+          _fullTranscription,
+        );
       }
     } catch (e) {
       _showError("Transcription failed: ${e.toString()}");
@@ -394,11 +402,10 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
 
     return DraggableScrollableSheet(
       controller: _scrollableController,
-      initialChildSize:
-          isTranscriptionAvailable ? 0.3 : 0.3, // Adjust size based on content
-      minChildSize: 0.3, // Minimum size when collapsed
-      maxChildSize: 0.7, // Maximum size when expanded
-      expand: false, // Allow toggling between expand and collapse
+      initialChildSize: isTranscriptionAvailable ? 0.3 : 0.3,
+      minChildSize: 0.3,
+      maxChildSize: 0.7,
+      expand: false,
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -411,10 +418,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           ),
           child: Column(
             children: [
-              // New centered Transcription title with expand/collapse icon
               _buildTranscriptionTitle(),
-
-              // Scrollable transcription content
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
@@ -441,8 +445,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                   ),
                 ),
               ),
-
-              // Music player and Transcribe button pinned at the bottom
               _buildTranscribeAndPlayerSection(),
             ],
           ),
@@ -540,26 +542,19 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       List<Map<String, String>> transcription) async {
     int cumulativeStartTime = 0;
     int currentSceneIndex = 0;
-    String accumulatedText =
-        ''; // For storing accumulated text for the current scene
+    String accumulatedText = '';
 
-    print('--- Starting transcription mapping ---');
-
-    // Iterate through scenes
+    // Iterate through scenes and map transcription text based on timestamps
     while (currentSceneIndex < widget.scenes.length) {
       Scene currentScene = widget.scenes[currentSceneIndex];
       int sceneDurationInMs = await _getAudioDurationForScene(currentScene);
       int sceneEndTime = cumulativeStartTime + sceneDurationInMs;
-
-      print(
-          'Processing scene: ${currentSceneIndex + 1} (start: $cumulativeStartTime ms, end: $sceneEndTime ms)');
 
       // Accumulate transcription text for the current scene
       for (int i = 0; i < transcription.length; i++) {
         var line = transcription[i];
         int timestampInMs = _convertTimestampToMilliseconds(line['timestamp']!);
 
-        // Ensure accurate timestamp comparison
         if (timestampInMs >= cumulativeStartTime &&
             timestampInMs < sceneEndTime) {
           accumulatedText += ' ${line['text']}';
@@ -567,24 +562,19 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
 
         // If the timestamp exceeds the scene boundary or it's the last transcription item
         if (timestampInMs >= sceneEndTime || i == transcription.length - 1) {
-          // Assign accumulated text to the current scene
           setState(() {
             widget.scenes[currentSceneIndex].text = accumulatedText.trim();
             _textControllers[currentSceneIndex].text =
-                widget.scenes[currentSceneIndex].text;
+                accumulatedText.trim(); // Update TextField controller
           });
 
-          print(
-              'Assigned text to scene ${currentSceneIndex + 1}: "${accumulatedText.trim()}"');
-
-          // Prepare for the next scene
+          // Move to the next scene
           currentSceneIndex++;
           if (currentSceneIndex < widget.scenes.length) {
             cumulativeStartTime = sceneEndTime;
             accumulatedText = ''; // Reset accumulated text for the next scene
           } else {
-            // If no more scenes, stop processing
-            print('No more scenes left to process');
+            // No more scenes left to process
             return;
           }
 
@@ -592,8 +582,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         }
       }
     }
-
-    print('--- Transcription mapping completed ---');
   }
 
   Future<int> _getAudioDurationForScene(Scene scene) async {
@@ -631,11 +619,12 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         setState(() {
           scene.text = newText;
         });
+        widget.onSceneTextUpdated(
+            index, newText); // Pass updated text back to parent
       },
-      maxLines: null, // Allow the TextField to expand vertically
+      maxLines: null,
       decoration: InputDecoration(
         labelText: 'Scene Text',
-        labelStyle: TextStyle(fontSize: 16, color: Colors.blueGrey),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
