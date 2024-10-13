@@ -174,6 +174,13 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           _combinedAudioPath,
           _fullTranscription,
         );
+
+        // Automatically expand the bottom sheet
+        _scrollableController.animateTo(
+          0.7, // Expand to 70% of the screen height
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
       }
     } catch (e) {
       _showError("Transcription failed: ${e.toString()}");
@@ -401,10 +408,11 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     final bool isTranscriptionAvailable = _fullTranscription.isNotEmpty;
 
     return DraggableScrollableSheet(
-      controller: _scrollableController,
-      initialChildSize: isTranscriptionAvailable ? 0.3 : 0.3,
-      minChildSize: 0.3,
-      maxChildSize: 0.7,
+      controller: _scrollableController, // Use the controller here
+      initialChildSize:
+          isTranscriptionAvailable ? 0.3 : 0.3, // Adjust size based on content
+      minChildSize: 0.3, // Minimum size when collapsed
+      maxChildSize: 0.7, // Maximum size when expanded
       expand: false,
       builder: (context, scrollController) {
         return Container(
