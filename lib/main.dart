@@ -348,7 +348,7 @@ class _AppBodyState extends State<AppBody> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Compose"),
+          title: const Text("Compose video"),
           actions: [
             IconButton(
               icon: Icon(Icons.video_library),
