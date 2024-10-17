@@ -63,32 +63,31 @@ class _AppBodyState extends State<AppBody> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-// State for combined player and transcription data
+  // State for combined player and transcription data
   AudioPlayer _combinedAudioPlayer = AudioPlayer();
   bool _isCombinedPlaying = false;
   String? _combinedAudioPath;
   List<Map<String, String>> _fullTranscription = [];
 
-  // Method to update transcription data from VoiceoversScreen
-  void _updateFullTranscription(List<Map<String, String>> transcription) {
-    setState(() {
-      _fullTranscription = transcription; // Update the transcription state
-    });
-  }
+  // Method to check if the "Preview" button should be enabled
+  bool _isPreviewEnabled() {
+    // Check if all scenes have an image and a voiceover selected
+    bool allScenesHaveImagesAndVoiceovers = _scenes
+        .every((scene) => scene.imageUrl != null && scene.voiceoverUrl != null);
 
-  // Method to handle combined player state and transcription data
-  void _onCombinedPlayerUpdate(
-    AudioPlayer player,
-    bool isPlaying,
-    String? audioPath,
-    List<Map<String, String>> transcription,
-  ) {
-    setState(() {
-      _combinedAudioPlayer = player;
-      _isCombinedPlaying = isPlaying;
-      _combinedAudioPath = audioPath;
-      _fullTranscription = transcription; // Update transcription data
-    });
+    // Check if background music and watermark are selected
+    bool backgroundMusicSelected = _backgroundMusicPath != null;
+    bool watermarkSelected = _watermarkFilePath != null;
+
+    // Debugging - Add print statements to verify conditions
+    print(
+        'Scenes with images and voiceovers: $allScenesHaveImagesAndVoiceovers');
+    print('Background music selected: $backgroundMusicSelected');
+    print('Watermark selected: $watermarkSelected');
+
+    return allScenesHaveImagesAndVoiceovers &&
+        backgroundMusicSelected &&
+        watermarkSelected;
   }
 
   @override
@@ -113,7 +112,7 @@ class _AppBodyState extends State<AppBody> {
     // Dispose the controllers and audio player when the widget is disposed
     _titleController.dispose();
     _descriptionController.dispose();
-    _combinedAudioPlayer?.dispose();
+    _combinedAudioPlayer.dispose();
     super.dispose();
   }
 
@@ -163,7 +162,15 @@ class _AppBodyState extends State<AppBody> {
     setState(() {
       _backgroundMusicPath = path;
     });
-    print('Background music selected: $_backgroundMusicPath'); // Debugging
+    print('Background music selected: $_backgroundMusicPath');
+  }
+
+  // Handle watermark selection
+  void _onWatermarkSelected(String path) {
+    setState(() {
+      _watermarkFilePath = path;
+    });
+    print('Watermark selected: $_watermarkFilePath');
   }
 
   Future<void> _createAndSaveVideo() async {
@@ -181,8 +188,7 @@ class _AppBodyState extends State<AppBody> {
 
       // Pass the scenes and _isCanceled flag to the createVideo method
       final outputPath = await _videoService.createVideo(_scenes, _isCanceled);
-      print(
-          'Output path generated: $outputPath'); // This should log the path to `final_video_with_subs.mp4`
+      print('Output path generated: $outputPath');
 
       if (_isCanceled) {
         _showError('Video generation canceled.');
@@ -263,6 +269,20 @@ class _AppBodyState extends State<AppBody> {
     });
   }
 
+  void _onCombinedPlayerUpdate(
+    AudioPlayer player,
+    bool isPlaying,
+    String? audioPath,
+    List<Map<String, String>> transcription,
+  ) {
+    setState(() {
+      _combinedAudioPlayer = player;
+      _isCombinedPlaying = isPlaying;
+      _combinedAudioPath = audioPath;
+      _fullTranscription = transcription; // Update transcription data
+    });
+  }
+
   Widget _getScreenWidget(int index) {
     switch (index) {
       case 0:
@@ -313,13 +333,19 @@ class _AppBodyState extends State<AppBody> {
               _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
             });
           },
-          onCombinedPlayerUpdate:
-              _onCombinedPlayerUpdate, // Update combined player state
+          onCombinedPlayerUpdate: _onCombinedPlayerUpdate,
           onSceneTextUpdated: _updateSceneText,
         );
       case 2:
         return SoundsWatermarkScreen(
-          onMusicSelected: _onMusicSelected,
+          onMusicSelected: (String path) {
+            setState(() {
+              _backgroundMusicPath = path;
+            });
+          },
+          onWatermarkSelected: (String path) {
+            _onWatermarkSelected(path);
+          },
           videoService: _videoService,
           backgroundMusicFileName: _backgroundMusicPath != null
               ? p.basename(_backgroundMusicPath!)
@@ -330,12 +356,11 @@ class _AppBodyState extends State<AppBody> {
         );
       case 3:
         return UploadScreen(
-          generatedVideoPath: _videoFilePath ?? '', // Pass the video path here
-          currentUser: _currentUser, // Pass the authenticated user
-          isAuthenticated: _isAuthorized, // Pass the authentication state
-          onSignIn: _handleSignIn, // Pass sign-in method
-          onSignOut: _handleSignOut, // Pass sign-out method
-          // Pass the title and description controllers
+          generatedVideoPath: _videoFilePath ?? '',
+          currentUser: _currentUser,
+          isAuthenticated: _isAuthorized,
+          onSignIn: _handleSignIn,
+          onSignOut: _handleSignOut,
           titleController: _titleController,
           descriptionController: _descriptionController,
         );
@@ -347,44 +372,53 @@ class _AppBodyState extends State<AppBody> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("Compose video"),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.video_library),
-              onPressed: () {
-                _createAndSaveVideo();
-              },
+      appBar: AppBar(
+        title: const Text("Compose video"),
+        actions: [
+          // Add a TextButton for "Preview"
+          TextButton.icon(
+            onPressed: _isPreviewEnabled()
+                ? () {
+                    _createAndSaveVideo();
+                  }
+                : null, // Disable the button if conditions aren't met
+            icon: Icon(Icons.visibility,
+                color: _isPreviewEnabled() ? Colors.blueAccent : Colors.grey),
+            label: Text(
+              'Preview video',
+              style: TextStyle(
+                fontSize: 20,
+                color: _isPreviewEnabled() ? Colors.blueAccent : Colors.grey,
+              ),
             ),
-          ],
-        ),
-        body: _getScreenWidget(_selectedIndex),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-                icon: Icon(Icons.image),
-                label: 'Scenes',
-                tooltip: 'Add scenes'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.voice_chat),
-                label: 'Voiceovers',
-                tooltip: 'Add voiceovers'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.library_music_outlined),
-                label: 'Music & Watermarks',
-                tooltip: 'Add background music and watermarks'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.upload),
-                label: 'Upload',
-                tooltip: 'Upload to YouTube'),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.amber[800],
-          unselectedItemColor: Colors.black,
-          onTap: _onItemTapped,
-          backgroundColor: Colors.white, // Set background color to red
-          type:
-              BottomNavigationBarType.fixed, // Ensure the color can be changed
-        ));
+          ),
+        ],
+      ),
+      body: _getScreenWidget(_selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+              icon: Icon(Icons.image), label: 'Scenes', tooltip: 'Add scenes'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.voice_chat),
+              label: 'Voiceovers',
+              tooltip: 'Add voiceovers'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.library_music_outlined),
+              label: 'Music & Watermarks',
+              tooltip: 'Add background music and watermarks'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.upload),
+              label: 'Upload',
+              tooltip: 'Upload to YouTube'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.black,
+        onTap: _onItemTapped,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+      ),
+    );
   }
 }

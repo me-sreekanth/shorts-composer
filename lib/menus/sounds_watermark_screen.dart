@@ -10,12 +10,14 @@ import 'package:shorts_composer/services/video_service.dart'; // Import your Vid
 
 class SoundsWatermarkScreen extends StatefulWidget {
   final Function(String) onMusicSelected;
+  final Function(String) onWatermarkSelected; // Add this line
   final VideoService videoService;
   final String? backgroundMusicFileName;
   final String? watermarkFileName;
 
   const SoundsWatermarkScreen({
     required this.onMusicSelected,
+    required this.onWatermarkSelected, // Add this line
     required this.videoService,
     this.backgroundMusicFileName,
     this.watermarkFileName,
@@ -113,6 +115,9 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
 
       // Set the watermark path in the VideoService
       widget.videoService.watermarkPath = pickedFile.path;
+
+      // Notify the parent widget about the selected watermark
+      widget.onWatermarkSelected(pickedFile.path); // Add this line
     }
   }
 
@@ -129,6 +134,7 @@ class _SoundsWatermarkScreenState extends State<SoundsWatermarkScreen> {
     setState(() {
       _selectedWatermark = null;
       widget.videoService.watermarkPath = null;
+      widget.onWatermarkSelected(''); // Notify parent that watermark is cleared
     });
   }
 
