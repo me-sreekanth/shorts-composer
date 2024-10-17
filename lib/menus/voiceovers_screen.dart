@@ -261,7 +261,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       },
       maxLines: null,
       decoration: InputDecoration(
-        labelText: 'Scene Text',
+        labelText: 'Voiceover text',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
@@ -358,26 +358,30 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
   }
 
   Widget _buildSceneCard(Scene scene, AudioPlayer player, int index) {
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSceneTextField(scene, index),
-            const SizedBox(height: 8),
-            _buildVoiceoverStatus(scene),
-            const SizedBox(height: 8),
-            _buildActionButtons(index),
-            if (_isLoading && _loadingIndex == index) LinearProgressIndicator(),
-            if (scene.voiceoverUrl != null)
-              _buildAudioPlayerControls(player, index),
-          ],
+    return Padding(
+      padding: EdgeInsets.only(left: 16.0, right: 16.0),
+      child: Card(
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSceneTextField(scene, index),
+              const SizedBox(height: 8),
+              _buildVoiceoverStatus(scene),
+              const SizedBox(height: 8),
+              _buildActionButtons(index),
+              if (_isLoading && _loadingIndex == index)
+                LinearProgressIndicator(),
+              if (scene.voiceoverUrl != null)
+                _buildAudioPlayerControls(player, index),
+            ],
+          ),
         ),
       ),
     );
