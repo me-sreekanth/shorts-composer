@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
 import 'package:http/http.dart' as http;
+import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shorts_composer/config.dart';
+import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
 
 class VoiceoverService {
@@ -162,5 +164,33 @@ class VoiceoverService {
     int seconds = (time % 60).toInt();
     int milliseconds = ((time % 1) * 100).toInt();
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${milliseconds.toString().padLeft(2, '0')}';
+  }
+
+  int convertTimestampToMilliseconds(String timestamp) {
+    final parts = timestamp.split(':');
+    final hours = int.parse(parts[0]);
+    final minutes = int.parse(parts[1]);
+    final secondsAndMilliseconds = parts[2].split('.');
+    final seconds = int.parse(secondsAndMilliseconds[0]);
+    final milliseconds = int.parse(secondsAndMilliseconds[1]);
+
+    return (hours * 3600000) +
+        (minutes * 60000) +
+        (seconds * 1000) +
+        milliseconds;
+  }
+
+  Future<int> getAudioDurationForScene(Scene scene) async {
+    if (scene.voiceoverUrl != null && scene.isLocalVoiceover) {
+      final audioPlayer = AudioPlayer();
+      try {
+        final duration = await audioPlayer.setFilePath(scene.voiceoverUrl!);
+        return duration?.inMilliseconds ??
+            scene.duration * 1000; // Fallback if no duration is available
+      } catch (e) {
+        return scene.duration * 1000;
+      }
+    }
+    return scene.duration * 1000;
   }
 }

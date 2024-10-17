@@ -591,13 +591,15 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     // Iterate through scenes and map transcription text based on timestamps
     while (currentSceneIndex < widget.scenes.length) {
       Scene currentScene = widget.scenes[currentSceneIndex];
-      int sceneDurationInMs = await _getAudioDurationForScene(currentScene);
+      int sceneDurationInMs =
+          await _voiceoverService.getAudioDurationForScene(currentScene);
       int sceneEndTime = cumulativeStartTime + sceneDurationInMs;
 
       // Accumulate transcription text for the current scene
       for (int i = 0; i < transcription.length; i++) {
         var line = transcription[i];
-        int timestampInMs = _convertTimestampToMilliseconds(line['timestamp']!);
+        int timestampInMs = _voiceoverService
+            .convertTimestampToMilliseconds(line['timestamp']!);
 
         if (timestampInMs >= cumulativeStartTime &&
             timestampInMs < sceneEndTime) {
@@ -626,34 +628,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         }
       }
     }
-  }
-
-  Future<int> _getAudioDurationForScene(Scene scene) async {
-    if (scene.voiceoverUrl != null && scene.isLocalVoiceover) {
-      final audioPlayer = AudioPlayer();
-      try {
-        final duration = await audioPlayer.setFilePath(scene.voiceoverUrl!);
-        return duration?.inMilliseconds ??
-            scene.duration * 1000; // Fallback if no duration is available
-      } catch (e) {
-        return scene.duration * 1000;
-      }
-    }
-    return scene.duration * 1000;
-  }
-
-  int _convertTimestampToMilliseconds(String timestamp) {
-    final parts = timestamp.split(':');
-    final hours = int.parse(parts[0]);
-    final minutes = int.parse(parts[1]);
-    final secondsAndMilliseconds = parts[2].split('.');
-    final seconds = int.parse(secondsAndMilliseconds[0]);
-    final milliseconds = int.parse(secondsAndMilliseconds[1]);
-
-    return (hours * 3600000) +
-        (minutes * 60000) +
-        (seconds * 1000) +
-        milliseconds;
   }
 
   Future<void> _generateVoiceover(int index) async {
