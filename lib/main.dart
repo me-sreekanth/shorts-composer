@@ -176,37 +176,35 @@ class _AppBodyState extends State<AppBody> {
   Future<void> _createAndSaveVideo() async {
     setState(() {
       _isLoading = true;
-      _isCanceled = false; // Reset the cancellation flag
+      _isCanceled = false;
     });
 
-    _showLoadingDialog(); // Show the loading dialog
+    _showProgressDialog(); // Show progress dialog
 
     try {
-      print('Starting video generation...');
       _videoService.backgroundMusicPath = _backgroundMusicPath;
-      _videoService.subtitlesPath = _assFilePath; // Set the subtitles path
+      _videoService.subtitlesPath = _assFilePath;
 
-      // Pass the scenes and _isCanceled flag to the createVideo method
       final outputPath = await _videoService.createVideo(_scenes, _isCanceled);
-      print('Output path generated: $outputPath');
 
       if (_isCanceled) {
         _showError('Video generation canceled.');
         return;
       }
       if (outputPath != null) {
-        Navigator.pop(
-            context); // Dismiss the AlertDialog when video generation is complete
+        Navigator.pop(context); // Close the progress dialog
+
         setState(() {
           _isLoading = false;
-          _videoFilePath = outputPath; // Store the generated video path
+          _videoFilePath = outputPath;
         });
+
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PreviewScreen(
               videoPath: outputPath,
-              assFilePath: null, // No need to pass assFilePath
+              assFilePath: null,
             ),
           ),
         );
@@ -222,6 +220,36 @@ class _AppBodyState extends State<AppBody> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showProgressDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return ValueListenableBuilder<String>(
+          valueListenable: _videoService.progressNotifier,
+          builder: (context, progress, child) {
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text(progress), // Display current progress here
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _cancelVideoGeneration,
+                  child: Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _cancelVideoGeneration() {

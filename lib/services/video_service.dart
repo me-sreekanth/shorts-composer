@@ -7,11 +7,15 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/services.dart'; // For loading assets
 import 'package:shorts_composer/models/scene.dart';
+import 'package:flutter/foundation.dart';
 
 class VideoService {
   String? backgroundMusicPath;
   String? subtitlesPath;
   String? watermarkPath;
+
+  final ValueNotifier<String> progressNotifier =
+      ValueNotifier<String>('Starting video generation...');
 
   bool _doesFileExist(String path) {
     File file = File(path);
@@ -66,6 +70,8 @@ class VideoService {
           print('Video generation canceled.');
           return null;
         }
+
+        progressNotifier.value = 'Processing scene ${scene.sceneNumber}...';
 
         final imagePath = scene.imageUrl!;
         final audioPath = scene.voiceoverUrl!;
@@ -125,6 +131,7 @@ class VideoService {
         }
       }
 
+      progressNotifier.value = 'Combining video scenes...';
       final concatFilePath = '$tempDir/concat.txt';
       final outputVideoPath = '$tempDir/final_video.mp4';
       final File concatFile = File(concatFilePath);
@@ -164,9 +171,9 @@ class VideoService {
 
       // Apply subtitles to the final video if available
       if (subtitlesPath != null && _doesFileExist(subtitlesPath!)) {
+        progressNotifier.value = 'Applying subtitles...';
         final subtitleOutputPath = '$tempDir/final_video_with_subs.mp4';
 
-        // Ensure the .ass file is in the correct location
         final fontData = await rootBundle.load('lib/assets/impact.ttf');
         final fontPath = '${directory.path}/impact.ttf';
         await File(fontPath).writeAsBytes(fontData.buffer.asUint8List());
@@ -206,6 +213,7 @@ class VideoService {
 
       // **Mix background music if it's available**
       if (backgroundMusicPath != null) {
+        progressNotifier.value = 'Mixing background music...';
         final finalOutputPath = '$tempDir/final_video_with_music.mp4';
 
         final mixCommand = [
@@ -237,9 +245,11 @@ class VideoService {
         finalVideoPath = finalOutputPath;
       }
 
+      progressNotifier.value = 'Video generation completed.';
       return finalVideoPath;
     } catch (e) {
       print('Exception during video creation: $e');
+      progressNotifier.value = 'Error during video generation.';
       throw Exception('Error creating video: $e');
     }
   }
