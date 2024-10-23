@@ -95,11 +95,13 @@ class VideoService {
           '-loop',
           '1',
           '-i',
-          imagePath,
+          '"$imagePath"', // Wrap file paths with quotes
           '-i',
-          audioPath,
+          '"$audioPath"', // Wrap file paths with quotes
           '-i',
-          watermarkPath ?? 'null',
+          watermarkPath != null
+              ? '"$watermarkPath"'
+              : 'null', // Wrap file paths with quotes if not null
           '-filter_complex',
           "[0:v]$selectedEffect[bg];" + watermarkFilter,
           '-c:v',
@@ -113,7 +115,7 @@ class VideoService {
           '-shortest',
           '-t',
           audioDuration.toString(),
-          outputPath
+          '"$outputPath"' // Wrap file paths with quotes
         ];
 
         print(

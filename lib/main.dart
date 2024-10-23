@@ -413,7 +413,7 @@ class _AppBodyState extends State<AppBody> {
             icon: Icon(Icons.visibility,
                 color: _isPreviewEnabled() ? Colors.blueAccent : Colors.grey),
             label: Text(
-              'Preview video',
+              'Preview',
               style: TextStyle(
                 fontSize: 20,
                 color: _isPreviewEnabled() ? Colors.blueAccent : Colors.grey,
