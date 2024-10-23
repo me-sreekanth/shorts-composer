@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
 import 'package:just_audio/just_audio.dart';
@@ -221,11 +220,11 @@ class VideoService {
         final mixCommand = [
           '-y',
           '-i',
-          finalVideoPath,
+          '"$finalVideoPath"', // Wrap path in quotes
           '-i',
-          backgroundMusicPath!,
+          '"$backgroundMusicPath"', // Wrap background music path in quotes
           '-filter_complex',
-          '[1:a]volume=0.3[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2', // Mixing the background music with voiceover
+          '[1:a]volume=0.3[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2',
           '-map',
           '0:v',
           '-c:v',
@@ -233,7 +232,7 @@ class VideoService {
           '-c:a',
           'aac',
           '-shortest',
-          finalOutputPath
+          '"$finalOutputPath"' // Wrap output path in quotes
         ];
 
         print('Executing FFmpeg mix command: $mixCommand');
