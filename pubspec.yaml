@@ -29,6 +29,7 @@ dependencies:
   open_filex: ^4.2.0
   share_plus: ^10.0.2
   http_parser: ^4.0.2
+  lottie: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +43,4 @@ flutter:
     - lib/assets/response_transcription.json
     - lib/assets/impact.ttf
     - lib/assets/Verdana.ttf
+    - lib/assets/animations/progress_animation.json

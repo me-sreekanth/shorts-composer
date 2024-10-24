@@ -14,6 +14,7 @@ import 'package:shorts_composer/menus/upload_screen.dart';
 import 'package:path/path.dart' as p;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:just_audio/just_audio.dart'; // Import for audio player
+import 'package:lottie/lottie.dart'; // Import Lottie package
 
 void main() {
   runApp(App());
@@ -189,8 +190,10 @@ class _AppBodyState extends State<AppBody> {
 
       if (_isCanceled) {
         _showError('Video generation canceled.');
+        Navigator.pop(context); // Close the dialog if canceled
         return;
       }
+
       if (outputPath != null) {
         Navigator.pop(context); // Close the progress dialog
 
@@ -215,6 +218,7 @@ class _AppBodyState extends State<AppBody> {
         });
       }
     } catch (e) {
+      Navigator.pop(context); // Ensure the dialog is dismissed on error
       _showError('Error creating video: $e');
       setState(() {
         _isLoading = false;
@@ -231,13 +235,39 @@ class _AppBodyState extends State<AppBody> {
           valueListenable: _videoService.progressNotifier,
           builder: (context, progress, child) {
             return AlertDialog(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 20),
-                  Text(progress), // Display current progress here
-                ],
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              content: Container(
+                width: 300, // Set width and height equal for a square dialog
+                height: 220,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Generating Video',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    // SizedBox(height: 20),
+                    // Lottie animation centered
+                    Lottie.asset(
+                      'lib/assets/animations/progress_animation.json', // Replace with your Lottie animation file path
+                      width: 160,
+                      height: 160,
+                    ),
+                    // SizedBox(height: 20), // Space below the animation
+
+                    // Status text below the Lottie animation
+                    Text(
+                      progress,
+                      style: TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center, // Center align the text
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
