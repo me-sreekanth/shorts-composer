@@ -42,14 +42,15 @@ class _AppBodyState extends State<AppBody> {
   final ApiService _apiService = ApiService();
   final VideoService _videoService = VideoService();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: <String>[
+    scopes: [
       'email',
       'https://www.googleapis.com/auth/youtube.upload',
+      'https://www.googleapis.com/auth/youtube.readonly',
     ],
   );
 
-  GoogleSignInAccount? _currentUser; // Google Sign-In state
-  bool _isAuthorized = false; // Track if the user is signed in
+  GoogleSignInAccount? _currentUser;
+  bool _isAuthorized = false;
 
   int _selectedIndex = 0;
   List<Scene> _scenes = [];
@@ -413,15 +414,22 @@ class _AppBodyState extends State<AppBody> {
               : null,
         );
       case 3:
-        return UploadScreen(
-          generatedVideoPath: _videoFilePath ?? '',
-          currentUser: _currentUser,
-          isAuthenticated: _isAuthorized,
-          onSignIn: _handleSignIn,
-          onSignOut: _handleSignOut,
-          titleController: _titleController,
-          descriptionController: _descriptionController,
-        );
+        return _isAuthorized
+            ? UploadScreen(
+                generatedVideoPath: _videoFilePath ?? '',
+                currentUser: _currentUser,
+                isAuthenticated: _isAuthorized,
+                onSignIn: _handleSignIn,
+                onSignOut: _handleSignOut,
+                titleController: _titleController,
+                descriptionController: _descriptionController,
+              )
+            : Center(
+                child: ElevatedButton(
+                  onPressed: _handleSignIn,
+                  child: Text('Sign In with Google'),
+                ),
+              );
       default:
         return Center(child: Text("Invalid selection."));
     }
