@@ -19,20 +19,17 @@ samples, guidance on mobile development, and a full API reference.
 
 Video mixing (FFMPEG)
 
-1. Mix scene and audio for each scene
-2. Add background music
 3. Add silence to the audio for each scene at the beggning and end
-4. 
 
 
 
 
 Pending items:
 
-1. Preview the mixed images and voiceovers
+
 8. Add Splash screen
-2. Create subtitles trascription
-3. Add watermarks
+
+
 6. Play store release
 11. UI to edit the uploaded JSON
 4. Android compatability
