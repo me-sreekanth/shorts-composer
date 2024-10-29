@@ -7,11 +7,19 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="shorts_composer"
+        android:label="Clip Forge"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:requestLegacyExternalStorage="true">
 
+        <!-- Adaptive icon components -->
+        <meta-data 
+            android:name="android.adaptive_icon_foreground" 
+            android:resource="@mipmap/ic_launcher_foreground"/>
+        <meta-data 
+            android:name="android.adaptive_icon_background" 
+            android:resource="@color/ic_launcher_background"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
