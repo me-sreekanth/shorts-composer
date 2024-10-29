@@ -51,7 +51,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.shorts_composer"
+        applicationId "com.clipforgeapp"
         minSdkVersion 24
         targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
@@ -60,10 +60,10 @@ android {
 
     signingConfigs {
         debug {
-            storeFile file('my-release-key.jks')
-            storePassword '123123'
-            keyAlias 'my-key-alias'
-            keyPassword '123123'
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
         }
 
         release {
