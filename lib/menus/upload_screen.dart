@@ -2,12 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/youtube/v3.dart' as youtube;
-import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:video_player/video_player.dart';
 import 'package:path/path.dart' as path;
-import 'package:image_picker/image_picker.dart'; // Add for video picking
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UploadScreen extends StatefulWidget {
@@ -20,7 +19,7 @@ class UploadScreen extends StatefulWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
 
-  UploadScreen({
+  const UploadScreen({
     required this.generatedVideoPath,
     required this.currentUser,
     required this.isAuthenticated,
@@ -147,7 +146,7 @@ class _UploadScreenState extends State<UploadScreen> {
           ));
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('No video available to upload or not authenticated.'),
         ));
       }
@@ -170,11 +169,11 @@ class _UploadScreenState extends State<UploadScreen> {
               children: [
                 _videoController!.value.isInitialized
                     ? VideoPlayer(_videoController!)
-                    : Center(child: CircularProgressIndicator()),
+                    : const Center(child: CircularProgressIndicator()),
                 Positioned.fill(
                   child: Center(
                     child: IconButton(
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.play_circle_fill,
                         color: Colors.white,
                         size: 64,
@@ -212,7 +211,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                 ),
-                child: Text('Pick a Video from Gallery'),
+                child: const Text('Pick a Video from Gallery'),
               ),
             ),
     );
@@ -231,7 +230,7 @@ class _UploadScreenState extends State<UploadScreen> {
               }
               return null;
             },
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Your video title',
               border: OutlineInputBorder(),
             ),
@@ -247,7 +246,7 @@ class _UploadScreenState extends State<UploadScreen> {
               }
               return null;
             },
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Your video description',
               border: OutlineInputBorder(),
               alignLabelWithHint: true,
@@ -255,55 +254,62 @@ class _UploadScreenState extends State<UploadScreen> {
             maxLines: 3,
           ),
         ),
-        SizedBox(height: 50),
+        const SizedBox(height: 50),
       ],
     );
   }
 
   Widget _buildLoggedInBottomSheet() {
     if (_isFetching) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
     return Container(
       width: MediaQuery.of(context).size.width,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
             leading: _channelLogoUrl != null
                 ? CircleAvatar(backgroundImage: NetworkImage(_channelLogoUrl!))
-                : Icon(Icons.account_circle, size: 40),
+                : const Icon(Icons.account_circle, size: 40),
             title: Text(_channelName ?? 'Channel Name'),
             subtitle: Text(_channelEmail ?? 'Channel Email'),
             trailing: IconButton(
-              icon: Icon(Icons.logout),
+              icon: const Icon(Icons.logout),
               onPressed: () => widget.onSignOut(),
             ),
           ),
           if (_isUploading)
-            Center(child: CircularProgressIndicator())
+            const Center(child: CircularProgressIndicator())
           else
             ElevatedButton(
-              onPressed: _uploadVideoToYouTube,
+              onPressed:
+                  _selectedVideoFile != null ? _uploadVideoToYouTube : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
-              child: Text('Upload to YouTube'),
+              child: const Text('Upload to YouTube'),
             ),
           if (_videoUrl != null)
-            ElevatedButton(
-              onPressed: () => _launchYouTubeUrl(_videoUrl!),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: GestureDetector(
+                onTap: () => _launchYouTubeUrl(_videoUrl!),
+                child: const Text(
+                  'Open in YouTube',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                    fontSize: 16,
+                  ),
+                ),
               ),
-              child: Text('Open Video in YouTube'),
             ),
         ],
       ),
@@ -328,7 +334,7 @@ class _UploadScreenState extends State<UploadScreen> {
           child: Column(
             children: [
               _buildVideoArea(), // Consistent video area layout
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               if (_selectedVideoFile != null ||
                   widget.generatedVideoPath.isNotEmpty)
                 _buildTextInputFields(),
@@ -339,7 +345,7 @@ class _UploadScreenState extends State<UploadScreen> {
       ),
       bottomSheet: widget.isAuthenticated
           ? _buildLoggedInBottomSheet()
-          : Center(child: Text("Please sign in to upload videos")),
+          : const Center(child: Text("Please sign in to upload videos")),
     );
   }
 
