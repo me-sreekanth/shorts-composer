@@ -48,20 +48,61 @@ class VideoService {
       final Random random = Random();
 
       final List<String> effects = [
+        // FINAL animations
         //Zoom in
         "zoompan=z='zoom+0.0015':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
-        //Zoom in multiple times
-        "zoompan=z='zoom+0.005':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=25:s=1080x1920",
+
         //Jerk animation
         "zoompan=z=1.5:x='iw/2-(iw/zoom/2)':y='random(1)*20':d={duration}:s=1080x1920",
+
         //Random zoom with both horizontal and vertical random panning
         "zoompan=z='1.3+random(1)*0.1':x='random(1)*iw':y='random(1)*ih':d={duration}:s=1080x1920",
+
         //Pan left to right
         "zoompan=z=1.3:x='(iw-iw/zoom)*(1-on/({duration}*0.7))':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
         "zoompan=z=1.4:x='(iw-iw/zoom)*(1-on/({duration}*0.5))':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
-        //Pan right to left
-        "zoompan=z=1.3:x='(iw-iw/zoom)*(on/({duration}*0.7))':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
-        "zoompan=z=1.3:x='(iw-iw/zoom)*(on/({duration}*0.5))':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920"
+
+        // Smooth Orbit Zoom In (Circular Pan)
+        "zoompan=z='1.05+0.0003*on':x='iw/2-(iw/zoom/2)+cos(on*0.1)*30':y='ih/2-(ih/zoom/2)+sin(on*0.1)*30':d={duration}:s=1080x1920",
+
+        //Diagonal Pan with Zoom In
+        "zoompan=z='zoom+0.002':x='iw/2-(iw/zoom/2)+(on*10)':y='ih/2-(ih/zoom/2)+(on*10)':d={duration}:s=1080x1920",
+
+        // Oscillating Zoom with Horizontal Sway
+        "zoompan=z='1+0.04*sin(on*6)':x='iw/2-(iw/zoom/2)+sin(on*3.14)*200':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920"
+
+            // Soft Bounce Effect with Light Zoom
+            "zoompan=z='1+0.02*sin(on*3.14/6)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
+
+        // Smooth Zoom In
+        "zoompan=z='1.05+0.0005*on':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
+
+        // Diagonal Pan with Slow Zoom
+        "zoompan=z='1.1+0.0005*on':x='(iw-iw/zoom)*(on/({duration}*0.7))':y='(ih-ih/zoom)*(on/({duration}*0.7))':d={duration}:s=1080x1920",
+
+        // Gentle Zoom Out
+        "zoompan=z='1.2-0.0005*on':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
+
+        // Vertical Slide with Subtle Zoom Out
+        "zoompan=z='1.1-0.0005*on':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)-(on*5)':d={duration}:s=1080x1920",
+
+        // Smooth Circular Pan with Slow Zoom In
+        "zoompan=z='1.1+0.0003*on':x='iw/2-(iw/zoom/2)+cos(on*0.05)*20':y='ih/2-(ih/zoom/2)+sin(on*0.05)*20':d={duration}:s=1080x1920",
+
+        // Slow Diagonal Slide with Zoom Out
+        "zoompan=z='1.1-0.0004*on':x='(iw-iw/zoom)*(on/({duration}*0.7))':y='(ih-ih/zoom)*(1-on/({duration}*0.7))':d={duration}:s=1080x1920",
+
+        // Subtle Diagonal Pan Top-Left to Bottom-Right with Zoom Out
+        "zoompan=z='1.1-0.0003*on':x='(iw-iw/zoom)*(1-on/({duration}*0.9))':y='(ih-ih/zoom)*(1-on/({duration}*0.9))':d={duration}:s=1080x1920",
+
+        // Gentle Orbit with Light Zoom In
+        "zoompan=z='1.02+0.0002*on':x='iw/2-(iw/zoom/2)+cos(on*0.05)*15':y='ih/2-(ih/zoom/2)+sin(on*0.05)*15':d={duration}:s=1080x1920",
+
+        // Slow Vertical Sway with Zoom Out
+        "zoompan=z='1.1-0.0003*on':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)+sin(on*0.05)*30':d={duration}:s=1080x1920",
+
+        // Horizontal Sway with Subtle Zoom
+        "zoompan=z='1.02+0.0004*on':x='iw/2-(iw/zoom/2)+sin(on*0.1)*50':y='ih/2-(ih/zoom/2)':d={duration}:s=1080x1920",
       ];
 
       for (var scene in scenes) {

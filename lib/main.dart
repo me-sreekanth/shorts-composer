@@ -1,7 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shorts_composer/menus/sounds_watermark_screen.dart';
 import 'package:shorts_composer/models/scene.dart';
@@ -373,6 +370,9 @@ class _AppBodyState extends State<AppBody> {
             }
           },
         );
+
+      // case 0:
+      //   return ClipDropImageScreen();
       case 1:
         return VoiceoversScreen(
           scenes: _scenes,

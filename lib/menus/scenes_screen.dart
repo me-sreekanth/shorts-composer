@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shorts_composer/models/scene.dart';
-import 'package:open_filex/open_filex.dart'; // Importing open_filex package
+import 'package:open_filex/open_filex.dart';
+import 'package:shorts_composer/services/api_service.dart'; // Importing open_filex package
 
 class ScenesScreen extends StatefulWidget {
   final List<Scene> scenes;
@@ -51,7 +52,15 @@ class _ScenesScreenState extends State<ScenesScreen> {
       _loadingIndex = index;
     });
 
-    await widget.onGenerateImage(index);
+    final prompt = widget.scenes[index].description;
+    final imagePath = await ApiService().generateImage(prompt, index);
+
+    if (imagePath != null) {
+      widget.onImageSelected(index, imagePath, isLocal: true);
+    } else {
+      // Handle any error, e.g., show a toast or alert
+      print('Error: Image generation failed.');
+    }
 
     setState(() {
       _isLoading = false;

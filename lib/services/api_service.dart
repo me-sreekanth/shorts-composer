@@ -5,39 +5,32 @@ import 'package:shorts_composer/config.dart';
 import 'dart:io';
 
 class ApiService {
-  Future<String?> generateImage(String description, int sceneNumber) async {
-    final data = {
-      'model': 'sdxl-base',
-      'data': {
-        'negprompt': 'unreal,fake,meme,joke,disfigured,poor quality,bad,ugly',
-        'samples': 1,
-        'steps': 50,
-        'aspect_ratio': 'portrait',
-        'guidance_scale': 35,
-        'seed': 8265801,
-        'prompt': description,
-        'style': 'realism',
-      },
-    };
+  final String apiKey =
+      '6b60433911651d961d2ffc90bfa206e0999be6c017c6fe00e420cbdc6553fbcdece9b72e15637b7d3df26026f6db12f2';
 
-    final response = await http.post(
-      Uri.parse('${Config.imageGenerationApiUrl}/generate/processId'),
-      headers: {
-        'Authorization': 'Bearer ${Config.imageGenerationToken}',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(data),
-    );
+  Future<String?> generateImage(String prompt, int sceneNumber) async {
+    final url = Uri.parse('https://clipdrop-api.co/text-to-image/v1');
+    try {
+      final request = http.MultipartRequest('POST', url)
+        ..fields['prompt'] = prompt
+        ..headers['x-api-key'] = apiKey;
 
-    print('Request Payload: ${jsonEncode(data)}');
-    print('Response Status Code: ${response.statusCode}');
-    print('Response Body: ${response.body}');
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseBytes = await response.stream.toBytes();
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      return responseData['data']['process_id'];
-    } else {
-      print('Error: ${response.reasonPhrase}');
+        // Save the image to the device's storage
+        final directory = await getApplicationDocumentsDirectory();
+        final imagePath = '${directory.path}/$sceneNumber-generated.png';
+        final imageFile = File(imagePath);
+        await imageFile.writeAsBytes(responseBytes);
+        return imagePath; // Return the saved file path
+      } else {
+        print('Failed to generate image. Status code: ${response.statusCode}');
+        return null;
+      }
+    } catch (error) {
+      print('Exception: $error');
       return null;
     }
   }
