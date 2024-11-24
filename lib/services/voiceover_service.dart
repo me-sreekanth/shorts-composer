@@ -6,9 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:shorts_composer/config.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
+import 'package:shorts_composer/services/config_service.dart';
 
 class VoiceoverService {
   /// Pick an MP3 file using File Picker
@@ -78,12 +78,12 @@ class VoiceoverService {
     String contentType =
         audioFilePath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
 
-    Uri url = Uri.parse(
-        'https://api.deepgram.com/v1/listen?smart_format=true&model=nova-2&language=en-IN');
+    Uri url = Uri.parse(ConfigService.get('transcribeVoiceoversUrl'));
     final response = await http.post(
       url,
       headers: {
-        'Authorization': 'Token ${Config.transcribeVoiceoversToken}',
+        'Authorization':
+            'Token ${ConfigService.get('transcribeVoiceoversToken')}',
         'Content-Type': contentType,
       },
       body: File(audioFilePath).readAsBytesSync(),

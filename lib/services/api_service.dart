@@ -1,19 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:shorts_composer/config.dart';
 import 'dart:io';
 
+import 'package:shorts_composer/services/config_service.dart';
+
 class ApiService {
-  final String apiKey =
-      '6b60433911651d961d2ffc90bfa206e0999be6c017c6fe00e420cbdc6553fbcdece9b72e15637b7d3df26026f6db12f2';
+  // final String apiKey =
+  //     '6b60433911651d961d2ffc90bfa206e0999be6c017c6fe00e420cbdc6553fbcdece9b72e15637b7d3df26026f6db12f2';
 
   Future<String?> generateImage(String prompt, int sceneNumber) async {
-    final url = Uri.parse('https://clipdrop-api.co/text-to-image/v1');
+    final url = Uri.parse(ConfigService.get('imageGenerationApiUrl'));
     try {
       final request = http.MultipartRequest('POST', url)
         ..fields['prompt'] = prompt
-        ..headers['x-api-key'] = apiKey;
+        ..headers['x-api-key'] = ConfigService.get('imageGenerationToken');
 
       final response = await request.send();
       if (response.statusCode == 200) {
@@ -41,9 +42,9 @@ class ApiService {
     };
 
     final response = await http.post(
-      Uri.parse('${Config.imageGenerationApiUrl}/check-status'),
+      Uri.parse('${ConfigService.get('imageGenerationApiUrl')}/check-status'),
       headers: {
-        'Authorization': 'Bearer ${Config.imageGenerationToken}',
+        'Authorization': 'Bearer ${ConfigService.get('imageGenerationToken')}',
         'Content-Type': 'application/json',
       },
       body: jsonEncode(payload),
@@ -96,7 +97,7 @@ class ApiService {
     try {
       // Perform the POST request to the Ngrok URL with headers and body
       final response = await http.post(
-        Uri.parse(Config.voiceoverUrl),
+        Uri.parse(ConfigService.get('voiceoverGenerationUrl')),
         headers: {
           'Authorization':
               'Bearer your_api_key_here', // Replace with actual API key

@@ -3,6 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shorts_composer/menus/sounds_watermark_screen.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
+import 'package:shorts_composer/services/config_service.dart';
 import 'package:shorts_composer/services/video_service.dart';
 import 'package:shorts_composer/menus/preview_screen.dart';
 import 'package:shorts_composer/menus/scenes_screen.dart';
@@ -13,18 +14,55 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:just_audio/just_audio.dart'; // Import for audio player
 import 'package:lottie/lottie.dart'; // Import Lottie package
 
-void main() {
-  runApp(App());
+void main() async {
+  try {
+    await ConfigService.loadConfig();
+    runApp(App());
+  } catch (e) {
+    print('Failed to load configuration: $e');
+    runApp(ErrorApp(e.toString())); // Render a fallback UI
+  }
+}
+
+class ErrorApp extends StatelessWidget {
+  final String errorMessage;
+
+  ErrorApp(this.errorMessage);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Error: $errorMessage'),
+        ),
+      ),
+    );
+  }
 }
 
 class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: ScaffoldMessenger(
-        child: Scaffold(
-          body: AppBody(),
-        ),
+      home: FutureBuilder(
+        future: ConfigService.loadConfig(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text('Failed to load configuration: ${snapshot.error}'),
+              ),
+            );
+          }
+          return AppBody(); // Proceed with the main app UI
+        },
       ),
     );
   }
