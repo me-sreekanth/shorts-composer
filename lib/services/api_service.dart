@@ -85,47 +85,57 @@ class ApiService {
   }
 
   Future<String?> generateVoiceover(String text, int sceneNumber) async {
-    // Define the request data (just the 'text' as per the working cURL request)
+    // Define the request data matching the cURL example
     final data = {
-      'text': text,
+      "input": text,
+      "voice": "en-US-GuyNeural",
+      "response_format": "mp3",
+      "speed": 1,
     };
 
-    // Perform the POST request to the correct endpoint with the voice ID
-    final response = await http.post(
-      Uri.parse(
-          '${Config.voiceoverGenerationApiUrl}/${Config.voiceoverVoiceId}'),
-      headers: {
-        'xi-api-key': Config.voiceoverGenerationToken,
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(data),
-    );
+    try {
+      // Perform the POST request to the Ngrok URL with headers and body
+      final response = await http.post(
+        Uri.parse(Config.voiceoverUrl),
+        headers: {
+          'Authorization':
+              'Bearer your_api_key_here', // Replace with actual API key
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(data),
+      );
 
-    print('Request Body: ${jsonEncode(data)}');
-    print('Response Status Code: ${response.statusCode}');
+      print('Request Body: ${jsonEncode(data)}');
+      print('Response Status Code: ${response.statusCode}');
 
-    if (response.statusCode == 200) {
-      // Save the response body (binary data) as an MP3 file
-      try {
-        // Get a directory to store the file
-        final directory = await getApplicationDocumentsDirectory();
-        final filePath = '${directory.path}/scene_$sceneNumber.mp3';
+      if (response.statusCode == 200) {
+        // Save the response body (binary data) as an MP3 file
+        try {
+          // Get a directory to store the file
+          final directory = await getApplicationDocumentsDirectory();
+          final filePath = '${directory.path}/scene_$sceneNumber.mp3';
 
-        // Write the response body as bytes to the file
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
+          // Write the response body as bytes to the file
+          final file = File(filePath);
+          await file.writeAsBytes(response.bodyBytes);
 
-        print('MP3 file saved at: $filePath');
+          print('MP3 file saved at: $filePath');
 
-        // Return the file path so that it can be played or used later
-        return filePath;
-      } catch (e) {
-        print('Error saving MP3 file: $e');
+          // Return the file path so that it can be played or used later
+          return filePath;
+        } catch (e) {
+          print('Error saving MP3 file: $e');
+          return null;
+        }
+      } else {
+        // Log errors if the request fails
+        print('Error: ${response.reasonPhrase}');
+        print('Error Body: ${response.body}');
         return null;
       }
-    } else {
-      print('Error: ${response.reasonPhrase}');
-      print('Error Body: ${response.body}');
+    } catch (e) {
+      // Catch and log any unexpected errors
+      print('Unexpected Error: $e');
       return null;
     }
   }

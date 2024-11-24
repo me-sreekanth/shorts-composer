@@ -10,6 +10,9 @@ class Config {
 //VOICEOVERS configs
   static const String voiceoverGenerationToken =
       'sk_f0dccc6bca2c9549cefb5fd1c3972e452925046fbdca8d34';
+  static const voiceoverUrl =
+      'https://b723-178-248-115-10.ngrok-free.app/v1/audio/speech';
+
   static const String voiceoverGenerationApiUrl =
       'https://api.elevenlabs.io/v1/text-to-speech';
   static const String voiceoverVoiceId =
