@@ -326,7 +326,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
             alignment: Alignment.bottomCenter,
             child: _buildDraggableBottomSheet(),
           ),
-          if (_isLoading) CircularProgressIndicator(),
+          // if (_isLoading) CircularProgressIndicator(),
         ],
       ),
     );

@@ -45,4 +45,3 @@ flutter:
     - lib/assets/Verdana.ttf
     - lib/assets/animations/progress_animation.json
     - lib/assets/audio/silence.mp3
-    - lib/assets/audio/test_speech.mp3
