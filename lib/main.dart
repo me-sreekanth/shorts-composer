@@ -1,6 +1,8 @@
+import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shorts_composer/menus/sounds_watermark_screen.dart';
+import 'package:shorts_composer/menus/text_to_speech_screen.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
 import 'package:shorts_composer/services/config_service.dart';
@@ -22,6 +24,17 @@ void main() async {
     print('Failed to load configuration: $e');
     runApp(ErrorApp(e.toString())); // Render a fallback UI
   }
+  enableDebugLogging();
+}
+
+void enableDebugLogging() {
+  FFmpegKitConfig.enableLogCallback((log) {
+    print("FFmpeg Log: ${log.getMessage()}");
+  });
+
+  FFmpegKitConfig.enableStatisticsCallback((statistics) {
+    print("FFmpeg Statistics: ${statistics.toString()}");
+  });
 }
 
 class ErrorApp extends StatelessWidget {
@@ -410,7 +423,7 @@ class _AppBodyState extends State<AppBody> {
         );
 
       // case 0:
-      //   return ClipDropImageScreen();
+      //   return TextToSpeechScreen();
       case 1:
         return VoiceoversScreen(
           scenes: _scenes,

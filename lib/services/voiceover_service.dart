@@ -82,8 +82,7 @@ class VoiceoverService {
     final response = await http.post(
       url,
       headers: {
-        'Authorization':
-            'Token ${ConfigService.get('transcribeVoiceoversToken')}',
+        'Authorization': 'Token ${ConfigService.get('deepgramApiToken')}',
         'Content-Type': contentType,
       },
       body: File(audioFilePath).readAsBytesSync(),

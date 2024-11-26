@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -86,56 +89,128 @@ class ApiService {
   }
 
   Future<String?> generateVoiceover(String text, int sceneNumber) async {
-    // Define the request data matching the cURL example
-    final data = {
-      "input": text,
-      "voice": "en-US-GuyNeural",
-      "response_format": "mp3",
-      "speed": 1,
-    };
-
     try {
-      // Perform the POST request to the Ngrok URL with headers and body
+      // Perform the POST request to the Deepgram API
       final response = await http.post(
-        Uri.parse(ConfigService.get('voiceoverGenerationUrl')),
+        Uri.parse(
+            '${ConfigService.get("voiceoverGenerationUrl")}?${ConfigService.get("voiceoverModel")}'),
         headers: {
           'Authorization':
-              'Bearer your_api_key_here', // Replace with actual API key
-          'Content-Type': 'application/json',
+              'Token ${ConfigService.get("deepgramApiToken")}', // Replace with your actual Deepgram API key
+          'Content-Type': 'text/plain',
         },
-        body: jsonEncode(data),
+        body: text,
       );
 
-      print('Request Body: ${jsonEncode(data)}');
+      print('Request Text: $text');
       print('Response Status Code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        // Save the response body (binary data) as an MP3 file
         try {
-          // Get a directory to store the file
+          // Save the original MP3 file
           final directory = await getApplicationDocumentsDirectory();
-          final filePath = '${directory.path}/scene_$sceneNumber.mp3';
+          final originalFilePath =
+              '${directory.path}/scene_${sceneNumber}_original.mp3';
+          final reformattedAudioPath =
+              '${directory.path}/scene_${sceneNumber}_reformatted.mp3';
+          final reformattedSilencePath =
+              '${directory.path}/silence_reformatted.mp3';
+          final intermediateFilePath =
+              '${directory.path}/scene_${sceneNumber}_intermediate.mp3';
+          final finalFilePath = '${directory.path}/scene_$sceneNumber.mp3';
 
           // Write the response body as bytes to the file
-          final file = File(filePath);
-          await file.writeAsBytes(response.bodyBytes);
+          final originalFile = File(originalFilePath);
+          await originalFile.writeAsBytes(response.bodyBytes);
 
-          print('MP3 file saved at: $filePath');
+          print('Original MP3 file saved at: $originalFilePath');
 
-          // Return the file path so that it can be played or used later
-          return filePath;
+          // Copy the silence.mp3 asset to a temporary directory
+          final tempDir = await getTemporaryDirectory();
+          final silenceFilePath = '${tempDir.path}/silence.mp3';
+
+          final byteData =
+              await rootBundle.load('lib/assets/audio/silence.mp3');
+          final silenceFile = File(silenceFilePath);
+          await silenceFile.writeAsBytes(byteData.buffer.asUint8List());
+
+          print('Silence file copied to: $silenceFilePath');
+
+          // Reformat silence file to ensure compatibility
+          final silenceReformatCommand = '-y -i $silenceFilePath '
+              '-ar 44100 -ac 2 -c:a libmp3lame $reformattedSilencePath';
+
+          final silenceReformatSession =
+              await FFmpegKit.execute(silenceReformatCommand);
+          if (!ReturnCode.isSuccess(
+              await silenceReformatSession.getReturnCode())) {
+            print('Error reformatting silence file.');
+            final logs = await silenceReformatSession.getLogs();
+            print(
+                'FFmpeg Silence Reformat Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
+            return null;
+          }
+          print('Silence reformatted: $reformattedSilencePath');
+
+          // Reformat original audio to ensure compatibility
+          final audioReformatCommand = '-y -i $originalFilePath '
+              '-ar 44100 -ac 2 -c:a libmp3lame $reformattedAudioPath';
+
+          final audioReformatSession =
+              await FFmpegKit.execute(audioReformatCommand);
+          if (!ReturnCode.isSuccess(
+              await audioReformatSession.getReturnCode())) {
+            print('Error reformatting original audio file.');
+            final logs = await audioReformatSession.getLogs();
+            print(
+                'FFmpeg Audio Reformat Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
+            return null;
+          }
+          print('Audio reformatted: $reformattedAudioPath');
+
+          // Step 1: Add silence to the beginning
+          final addBeginningCommand = '-y '
+              '-i $reformattedSilencePath -i $reformattedAudioPath '
+              '-filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" '
+              '-map "[out]" $intermediateFilePath';
+
+          final beginningSession = await FFmpegKit.execute(addBeginningCommand);
+          if (!ReturnCode.isSuccess(await beginningSession.getReturnCode())) {
+            print('Error adding silence to the beginning.');
+            final logs = await beginningSession.getLogs();
+            print(
+                'FFmpeg Beginning Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
+            return null;
+          }
+          print('Silence added to the beginning: $intermediateFilePath');
+
+          // Step 2: Add silence to the end
+          final addEndCommand = '-y '
+              '-i $intermediateFilePath -i $reformattedSilencePath '
+              '-filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" '
+              '-map "[out]" $finalFilePath';
+
+          final endSession = await FFmpegKit.execute(addEndCommand);
+          if (!ReturnCode.isSuccess(await endSession.getReturnCode())) {
+            print('Error adding silence to the end.');
+            final logs = await endSession.getLogs();
+            print(
+                'FFmpeg End Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
+            return null;
+          }
+
+          print('Silence added to the end: $finalFilePath');
+          return finalFilePath;
         } catch (e) {
-          print('Error saving MP3 file: $e');
+          print('Error processing MP3 file: $e');
           return null;
         }
       } else {
-        // Log errors if the request fails
         print('Error: ${response.reasonPhrase}');
         print('Error Body: ${response.body}');
         return null;
       }
     } catch (e) {
-      // Catch and log any unexpected errors
       print('Unexpected Error: $e');
       return null;
     }
