@@ -90,7 +90,7 @@ class ApiService {
 
   Future<String?> generateVoiceover(String text, int sceneNumber) async {
     try {
-      // Perform the POST request to the Deepgram API
+      // Step 1: Perform the POST request to the Deepgram API
       final response = await http.post(
         Uri.parse(
             '${ConfigService.get("voiceoverGenerationUrl")}?${ConfigService.get("voiceoverModel")}'),
@@ -107,17 +107,12 @@ class ApiService {
 
       if (response.statusCode == 200) {
         try {
-          // Save the original MP3 file
+          // Step 2: Save the generated MP3 file
           final directory = await getApplicationDocumentsDirectory();
           final originalFilePath =
               '${directory.path}/scene_${sceneNumber}_original.mp3';
-          final reformattedAudioPath =
-              '${directory.path}/scene_${sceneNumber}_reformatted.mp3';
-          final reformattedSilencePath =
-              '${directory.path}/silence_reformatted.mp3';
-          final intermediateFilePath =
-              '${directory.path}/scene_${sceneNumber}_intermediate.mp3';
-          final finalFilePath = '${directory.path}/scene_$sceneNumber.mp3';
+          final finalFilePath =
+              '${directory.path}/scene_${sceneNumber}_with_beeps.mp3';
 
           // Write the response body as bytes to the file
           final originalFile = File(originalFilePath);
@@ -125,82 +120,37 @@ class ApiService {
 
           print('Original MP3 file saved at: $originalFilePath');
 
-          // Copy the silence.mp3 asset to a temporary directory
+          // Step 3: Copy the beep.mp3 asset to a temporary directory
           final tempDir = await getTemporaryDirectory();
-          final silenceFilePath = '${tempDir.path}/silence.mp3';
+          final beepFilePath = '${tempDir.path}/silence-half-second.mp3';
 
           final byteData =
-              await rootBundle.load('lib/assets/audio/silence.mp3');
-          final silenceFile = File(silenceFilePath);
-          await silenceFile.writeAsBytes(byteData.buffer.asUint8List());
+              await rootBundle.load('lib/assets/audio/silence-half-second.mp3');
+          final beepFile = File(beepFilePath);
+          await beepFile.writeAsBytes(byteData.buffer.asUint8List());
 
-          print('Silence file copied to: $silenceFilePath');
+          print('Beep file copied to: $beepFilePath');
 
-          // Reformat silence file to ensure compatibility
-          final silenceReformatCommand = '-y -i $silenceFilePath '
-              '-ar 44100 -ac 2 -c:a libmp3lame $reformattedSilencePath';
-
-          final silenceReformatSession =
-              await FFmpegKit.execute(silenceReformatCommand);
-          if (!ReturnCode.isSuccess(
-              await silenceReformatSession.getReturnCode())) {
-            print('Error reformatting silence file.');
-            final logs = await silenceReformatSession.getLogs();
-            print(
-                'FFmpeg Silence Reformat Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
-            return null;
-          }
-          print('Silence reformatted: $reformattedSilencePath');
-
-          // Reformat original audio to ensure compatibility
-          final audioReformatCommand = '-y -i $originalFilePath '
-              '-ar 44100 -ac 2 -c:a libmp3lame $reformattedAudioPath';
-
-          final audioReformatSession =
-              await FFmpegKit.execute(audioReformatCommand);
-          if (!ReturnCode.isSuccess(
-              await audioReformatSession.getReturnCode())) {
-            print('Error reformatting original audio file.');
-            final logs = await audioReformatSession.getLogs();
-            print(
-                'FFmpeg Audio Reformat Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
-            return null;
-          }
-          print('Audio reformatted: $reformattedAudioPath');
-
-          // Step 1: Add silence to the beginning
-          final addBeginningCommand = '-y '
-              '-i $reformattedSilencePath -i $reformattedAudioPath '
-              '-filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" '
-              '-map "[out]" $intermediateFilePath';
-
-          final beginningSession = await FFmpegKit.execute(addBeginningCommand);
-          if (!ReturnCode.isSuccess(await beginningSession.getReturnCode())) {
-            print('Error adding silence to the beginning.');
-            final logs = await beginningSession.getLogs();
-            print(
-                'FFmpeg Beginning Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
-            return null;
-          }
-          print('Silence added to the beginning: $intermediateFilePath');
-
-          // Step 2: Add silence to the end
-          final addEndCommand = '-y '
-              '-i $intermediateFilePath -i $reformattedSilencePath '
-              '-filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[out]" '
+          // Step 4: Add beep at the beginning and end of the audio file
+          final command = '-y '
+              '-i $beepFilePath -i $originalFilePath -i $beepFilePath '
+              '-filter_complex "[0:a][1:a][2:a]concat=n=3:v=0:a=1[out]" '
               '-map "[out]" $finalFilePath';
 
-          final endSession = await FFmpegKit.execute(addEndCommand);
-          if (!ReturnCode.isSuccess(await endSession.getReturnCode())) {
-            print('Error adding silence to the end.');
-            final logs = await endSession.getLogs();
+          final session = await FFmpegKit.execute(command);
+          final returnCode = await session.getReturnCode();
+
+          if (ReturnCode.isSuccess(returnCode)) {
             print(
-                'FFmpeg End Error Logs:\n${logs.map((log) => log.getMessage()).join('\n')}');
+                'Final MP3 file with beeps added at the beginning and end saved at: $finalFilePath');
+            return finalFilePath;
+          } else {
+            print('Error appending beeps to the audio.');
+            final logs = await session.getLogs();
+            final errorLog = logs.map((log) => log.getMessage()).join('\n');
+            print('FFmpeg Full Error Logs:\n$errorLog');
             return null;
           }
-
-          print('Silence added to the end: $finalFilePath');
-          return finalFilePath;
         } catch (e) {
           print('Error processing MP3 file: $e');
           return null;

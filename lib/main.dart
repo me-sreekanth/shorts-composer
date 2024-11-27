@@ -2,7 +2,6 @@ import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shorts_composer/menus/sounds_watermark_screen.dart';
-import 'package:shorts_composer/menus/text_to_speech_screen.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:shorts_composer/services/api_service.dart';
 import 'package:shorts_composer/services/config_service.dart';

@@ -265,7 +265,7 @@ class VideoService {
           '-i',
           '"$backgroundMusicPath"', // Wrap background music path in quotes
           '-filter_complex',
-          '[1:a]volume=0.3[a1];[0:a][a1]amix=inputs=2:duration=first:dropout_transition=2',
+          '[0:a]volume=3.0[a0];[1:a]volume=0.3[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2',
           '-map',
           '0:v',
           '-c:v',
