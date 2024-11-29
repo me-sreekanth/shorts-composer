@@ -27,7 +27,9 @@ Partially Done:
 8. Add Splash screen
 
 Pending items:
-
+1. Flutter upgrade
+2. Crop customisation
+3. Version 2.0
 
 Future plans:
 

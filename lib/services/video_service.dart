@@ -130,20 +130,22 @@ class VideoService {
           watermarkFilter = "[2:v]scale=iw*1.5:-1[wm];[bg][wm]overlay=160:160";
         }
 
+        // Updated Scale and Crop Filter
+        final scaleAndCropFilter =
+            "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
+
         final ffmpegCommand = [
           '-y',
           '-loop',
           '1',
           '-i',
-          '"$imagePath"', // Wrap file paths with quotes
+          '"$imagePath"', // Image file
           '-i',
-          '"$audioPath"', // Wrap file paths with quotes
+          '"$audioPath"', // Voiceover audio
           '-i',
-          watermarkPath != null
-              ? '"$watermarkPath"'
-              : 'null', // Wrap file paths with quotes if not null
+          watermarkPath != null ? '"$watermarkPath"' : 'null', // Watermark file
           '-filter_complex',
-          "[0:v]$selectedEffect[bg];" + watermarkFilter,
+          "[0:v]$scaleAndCropFilter,$selectedEffect[bg];" + watermarkFilter,
           '-c:v',
           'libx264',
           '-pix_fmt',
@@ -155,7 +157,7 @@ class VideoService {
           '-shortest',
           '-t',
           audioDuration.toString(),
-          '"$outputPath"' // Wrap file paths with quotes
+          '"$outputPath"' // Output video
         ];
 
         print(
@@ -265,7 +267,7 @@ class VideoService {
           '-i',
           '"$backgroundMusicPath"', // Wrap background music path in quotes
           '-filter_complex',
-          '[0:a]volume=3.0[a0];[1:a]volume=0.3[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2',
+          '[0:a]volume=4.0[a0];[1:a]volume=0.5[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=2',
           '-map',
           '0:v',
           '-c:v',

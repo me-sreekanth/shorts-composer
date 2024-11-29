@@ -113,7 +113,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         _fullTranscription = await _parseAssFileForTranscription(assFilePath);
 
         // Map the transcription data to scenes
-        await _mapTranscriptionToScenes(_fullTranscription);
+        // await _mapTranscriptionToScenes(_fullTranscription);
 
         _combinedAudioPlayer = AudioPlayer();
         await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);
