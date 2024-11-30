@@ -7,6 +7,15 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:video_player/video_player.dart';
+import 'package:share_plus/share_plus.dart';
+
 class PreviewScreen extends StatefulWidget {
   final String videoPath;
   final String? assFilePath;
@@ -21,15 +30,15 @@ class _PreviewScreenState extends State<PreviewScreen> {
   VideoPlayerController? _controller;
   Future<void>? _initializeVideoPlayerFuture;
   bool _isPlaying = false;
+  bool _isAppBarVisible = true; // Track AppBar visibility
 
   @override
   void initState() {
     super.initState();
-    _requestPermissions(); // Ask for permissions when screen is loaded
+    _requestPermissions();
     _initializeVideoPlayer();
   }
 
-  // Request storage permissions for Android and gallery permission for iOS
   Future<void> _requestPermissions() async {
     if (Platform.isAndroid) {
       if (await Permission.storage.isDenied) {
@@ -45,13 +54,38 @@ class _PreviewScreenState extends State<PreviewScreen> {
   Future<void> _initializeVideoPlayer() async {
     _controller = VideoPlayerController.file(File(widget.videoPath));
 
-    setState(() {
-      _initializeVideoPlayerFuture = _controller!.initialize();
+    // Initialize the video controller and add a listener
+    _initializeVideoPlayerFuture = _controller!.initialize().then((_) {
+      // Ensure the first frame is shown after the video is initialized
+      setState(() {});
+
+      // Add listener to update AppBar visibility based on playback state
+      _controller!.addListener(_videoPlayerListener);
     });
+  }
+
+  void _videoPlayerListener() {
+    final bool isPlaying = _controller!.value.isPlaying;
+    final bool isEnded =
+        _controller!.value.position >= _controller!.value.duration;
+
+    if (isPlaying != _isPlaying || isEnded) {
+      setState(() {
+        _isPlaying = isPlaying;
+
+        // Show AppBar when video is paused or ended
+        if (!_isPlaying || isEnded) {
+          _isAppBarVisible = true;
+        } else {
+          _isAppBarVisible = false;
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _controller?.removeListener(_videoPlayerListener);
     _controller?.dispose();
     super.dispose();
   }
@@ -60,14 +94,15 @@ class _PreviewScreenState extends State<PreviewScreen> {
     setState(() {
       if (_controller!.value.isPlaying) {
         _controller!.pause();
+        _isAppBarVisible = true; // Show AppBar when paused
       } else {
         _controller!.play();
+        _isAppBarVisible = false; // Hide AppBar when playing
       }
-      _isPlaying = !_controller!.value.isPlaying;
+      _isPlaying = _controller!.value.isPlaying;
     });
   }
 
-  // Open file picker for selecting folder or destination on Android
   Future<void> _pickSaveLocationAndSaveVideo(String videoPath) async {
     try {
       if (Platform.isAndroid) {
@@ -83,7 +118,6 @@ class _PreviewScreenState extends State<PreviewScreen> {
             SnackBar(content: Text('Video saved to $newFilePath')),
           );
 
-          // Open the video using the platform's default video player
           OpenFilex.open(newFilePath).then((result) {
             if (result.type != ResultType.done) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -97,7 +131,6 @@ class _PreviewScreenState extends State<PreviewScreen> {
           );
         }
       } else if (Platform.isIOS) {
-        // On iOS, use the Share API for the user to choose where to save
         await Share.shareXFiles([XFile(videoPath)],
             text: 'Save the video file');
       }
@@ -112,15 +145,18 @@ class _PreviewScreenState extends State<PreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Preview Video'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.download),
-            onPressed: () => _pickSaveLocationAndSaveVideo(widget.videoPath),
-          ),
-        ],
-      ),
+      appBar: _isAppBarVisible
+          ? AppBar(
+              title: const Text('Preview Video'),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.download),
+                  onPressed: () =>
+                      _pickSaveLocationAndSaveVideo(widget.videoPath),
+                ),
+              ],
+            )
+          : null,
       body: Stack(
         children: [
           FutureBuilder(
@@ -145,47 +181,49 @@ class _PreviewScreenState extends State<PreviewScreen> {
               }
             },
           ),
-          Positioned(
-            bottom: 50,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                if (_controller != null)
-                  VideoProgressIndicator(
-                    _controller!,
-                    allowScrubbing: true,
-                    colors: VideoProgressColors(
-                      playedColor: Colors.red,
-                      bufferedColor: Colors.grey,
-                      backgroundColor: Colors.black,
-                    ),
-                  ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        _isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
+          if (_isAppBarVisible)
+            Positioned(
+              bottom: 50,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  if (_controller != null)
+                    VideoProgressIndicator(
+                      _controller!,
+                      allowScrubbing: true,
+                      colors: VideoProgressColors(
+                        playedColor: Colors.red,
+                        bufferedColor: Colors.grey,
+                        backgroundColor: Colors.black,
                       ),
-                      onPressed: _togglePlayPause,
                     ),
-                    IconButton(
-                      icon: Icon(Icons.replay, color: Colors.white),
-                      onPressed: () {
-                        _controller!.seekTo(Duration.zero);
-                        _controller!.play();
-                        setState(() {
-                          _isPlaying = true;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ],
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                        ),
+                        onPressed: _togglePlayPause,
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.replay, color: Colors.white),
+                        onPressed: () {
+                          _controller!.seekTo(Duration.zero);
+                          _controller!.play();
+                          setState(() {
+                            _isPlaying = true;
+                            _isAppBarVisible = false; // Hide AppBar on replay
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

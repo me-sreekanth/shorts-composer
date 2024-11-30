@@ -30,6 +30,9 @@ Pending items:
 1. Flutter upgrade
 2. Crop customisation
 3. Version 2.0
+4. Preview issue
+5. Allow only a fixed size of the watermark
+
 
 Future plans:
 
