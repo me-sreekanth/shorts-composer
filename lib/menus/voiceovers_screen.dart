@@ -107,13 +107,14 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
           await _voiceoverService.combineVoiceovers(voiceoverFiles);
 
       if (_combinedAudioPath != null) {
+        // Pass both the scenes and the onAssFileGenerated callback
         String assFilePath = await _voiceoverService.transcribeAndGenerateAss(
-            _combinedAudioPath!, widget.onAssFileGenerated);
+            _combinedAudioPath!, widget.scenes, widget.onAssFileGenerated);
 
         _fullTranscription = await _parseAssFileForTranscription(assFilePath);
 
         // Map the transcription data to scenes
-        // await _mapTranscriptionToScenes(_fullTranscription);
+        await _mapTranscriptionToScenes(_fullTranscription);
 
         _combinedAudioPlayer = AudioPlayer();
         await _combinedAudioPlayer!.setFilePath(_combinedAudioPath!);

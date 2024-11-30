@@ -73,8 +73,8 @@ class VoiceoverService {
   }
 
   /// Transcribe the combined audio file and generate an ASS subtitle file
-  Future<String> transcribeAndGenerateAss(
-      String audioFilePath, Function(String) onAssFileGenerated) async {
+  Future<String> transcribeAndGenerateAss(String audioFilePath,
+      List<Scene> scenes, Function(String) onAssFileGenerated) async {
     String contentType =
         audioFilePath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
 
@@ -91,9 +91,60 @@ class VoiceoverService {
     if (response.statusCode == 200) {
       List<dynamic> words = jsonDecode(response.body)['results']['channels'][0]
           ['alternatives'][0]['words'];
-      return await _createAssFileFromApi(words, onAssFileGenerated);
+
+      // Correct the transcription words using scene.text
+      List<dynamic> correctedWords = _correctTranscriptionWords(words, scenes);
+
+      // Generate ASS file with corrected words
+      return await _createAssFileFromApi(correctedWords, onAssFileGenerated);
     }
     throw Exception("Failed to transcribe audio");
+  }
+
+  List<dynamic> _correctTranscriptionWords(
+      List<dynamic> words, List<Scene> scenes) {
+    List<dynamic> correctedWords = [];
+    int currentSceneIndex = 0;
+
+    for (var word in words) {
+      double start = word['start'];
+      double end = word['end'];
+
+      // Find the corresponding scene for the current word
+      while (currentSceneIndex < scenes.length &&
+          end > scenes[currentSceneIndex].duration) {
+        currentSceneIndex++;
+      }
+
+      if (currentSceneIndex < scenes.length) {
+        Scene scene = scenes[currentSceneIndex];
+
+        // If scene.text is not provided, skip correction
+        if (scene.text.isEmpty) {
+          correctedWords.add(word);
+          continue;
+        }
+
+        // Split scene text into words
+        List<String> sceneWords = scene.text.split(' ');
+
+        // Match the current word index with scene words
+        int wordIndex = correctedWords.length % sceneWords.length;
+        String correctedWord = sceneWords[wordIndex];
+
+        // Add corrected word with timing
+        correctedWords.add({
+          'start': start,
+          'end': end,
+          'punctuated_word': correctedWord,
+        });
+      } else {
+        // If no matching scene, keep the original word
+        correctedWords.add(word);
+      }
+    }
+
+    return correctedWords;
   }
 
   /// Create an ASS subtitle file from the API transcription data
@@ -142,7 +193,7 @@ class VoiceoverService {
     for (var word in words) {
       String start = _formatTime(word['start']);
       String end = _formatTime(word['end']);
-      String text = word['punctuated_word'].replaceAll('\n', ' ');
+      String text = word['punctuated_word'];
 
       print('Writing subtitle: Start: $start, End: $end, Text: $text');
       sink.writeln(

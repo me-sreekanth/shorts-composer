@@ -111,6 +111,8 @@ class ApiService {
           final directory = await getApplicationDocumentsDirectory();
           final originalFilePath =
               '${directory.path}/scene_${sceneNumber}_original.mp3';
+          final adjustedVolumeFilePath =
+              '${directory.path}/scene_${sceneNumber}_adjusted_volume.mp3';
           final finalFilePath =
               '${directory.path}/scene_${sceneNumber}_with_beeps.mp3';
 
@@ -120,7 +122,27 @@ class ApiService {
 
           print('Original MP3 file saved at: $originalFilePath');
 
-          // Step 3: Copy the beep.mp3 asset to a temporary directory
+          // Step 3: Increase the volume of the audio file
+          const volumeMultiplier =
+              4.0; // Increase volume by 2x (adjust as needed)
+          final volumeCommand =
+              '-y -i $originalFilePath -filter:a "volume=$volumeMultiplier" $adjustedVolumeFilePath';
+
+          final volumeSession = await FFmpegKit.execute(volumeCommand);
+          final volumeReturnCode = await volumeSession.getReturnCode();
+
+          if (ReturnCode.isSuccess(volumeReturnCode)) {
+            print(
+                'Volume adjusted successfully. File saved at: $adjustedVolumeFilePath');
+          } else {
+            print('Error adjusting volume.');
+            final logs = await volumeSession.getLogs();
+            final errorLog = logs.map((log) => log.getMessage()).join('\n');
+            print('FFmpeg Volume Adjustment Logs:\n$errorLog');
+            return null;
+          }
+
+          // Step 4: Copy the beep.mp3 asset to a temporary directory
           final tempDir = await getTemporaryDirectory();
           final beepFilePath = '${tempDir.path}/silence-half-second.mp3';
 
@@ -131,9 +153,9 @@ class ApiService {
 
           print('Beep file copied to: $beepFilePath');
 
-          // Step 4: Add beep at the beginning and end of the audio file
+          // Step 5: Add beep at the beginning and end of the audio file
           final command = '-y '
-              '-i $beepFilePath -i $originalFilePath -i $beepFilePath '
+              '-i $beepFilePath -i $adjustedVolumeFilePath -i $beepFilePath '
               '-filter_complex "[0:a][1:a][2:a]concat=n=3:v=0:a=1[out]" '
               '-map "[out]" $finalFilePath';
 
