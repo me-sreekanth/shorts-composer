@@ -32,6 +32,7 @@ Pending items:
 3. Version 2.0
 4. Preview issue
 5. Allow only a fixed size of the watermark
+6. Keyboard issue in the voiceovers screen
 
 
 Future plans:

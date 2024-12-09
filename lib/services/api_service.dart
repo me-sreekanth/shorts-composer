@@ -90,96 +90,40 @@ class ApiService {
 
   Future<String?> generateVoiceover(String text, int sceneNumber) async {
     try {
-      // Step 1: Perform the POST request to the Deepgram API
+      // Define the API URL and headers
+      final apiUrl = ConfigService.get("voiceoverGenerationUrl");
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization':
+            'Bearer your_api_key_here', // Replace with your API key
+      };
+
+      // Prepare the request body
+      final requestBody = jsonEncode({
+        'input': text,
+        'voice': ConfigService.get("voiceoverModel"),
+        'response_format': 'mp3',
+        'speed': 1,
+      });
+
+      // Perform the POST request
       final response = await http.post(
-        Uri.parse(
-            '${ConfigService.get("voiceoverGenerationUrl")}?${ConfigService.get("voiceoverModel")}'),
-        headers: {
-          'Authorization':
-              'Token ${ConfigService.get("deepgramApiToken")}', // Replace with your actual Deepgram API key
-          'Content-Type': 'text/plain',
-        },
-        body: text,
+        Uri.parse(apiUrl),
+        headers: headers,
+        body: requestBody,
       );
 
-      print('Request Text: $text');
-      print('Response Status Code: ${response.statusCode}');
-
       if (response.statusCode == 200) {
-        try {
-          // Step 2: Save the generated MP3 file
-          final directory = await getApplicationDocumentsDirectory();
-          final originalFilePath =
-              '${directory.path}/scene_${sceneNumber}_original.mp3';
-          final adjustedVolumeFilePath =
-              '${directory.path}/scene_${sceneNumber}_adjusted_volume.mp3';
-          final finalFilePath =
-              '${directory.path}/scene_${sceneNumber}_with_beeps.mp3';
+        // Save the MP3 file locally
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/scene_${sceneNumber}_voiceover.mp3';
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
 
-          // Write the response body as bytes to the file
-          final originalFile = File(originalFilePath);
-          await originalFile.writeAsBytes(response.bodyBytes);
-
-          print('Original MP3 file saved at: $originalFilePath');
-
-          // Step 3: Increase the volume of the audio file
-          const volumeMultiplier =
-              4.0; // Increase volume by 2x (adjust as needed)
-          final volumeCommand =
-              '-y -i $originalFilePath -filter:a "volume=$volumeMultiplier" $adjustedVolumeFilePath';
-
-          final volumeSession = await FFmpegKit.execute(volumeCommand);
-          final volumeReturnCode = await volumeSession.getReturnCode();
-
-          if (ReturnCode.isSuccess(volumeReturnCode)) {
-            print(
-                'Volume adjusted successfully. File saved at: $adjustedVolumeFilePath');
-          } else {
-            print('Error adjusting volume.');
-            final logs = await volumeSession.getLogs();
-            final errorLog = logs.map((log) => log.getMessage()).join('\n');
-            print('FFmpeg Volume Adjustment Logs:\n$errorLog');
-            return null;
-          }
-
-          // Step 4: Copy the beep.mp3 asset to a temporary directory
-          final tempDir = await getTemporaryDirectory();
-          final beepFilePath = '${tempDir.path}/silence-half-second.mp3';
-
-          final byteData =
-              await rootBundle.load('lib/assets/audio/silence-half-second.mp3');
-          final beepFile = File(beepFilePath);
-          await beepFile.writeAsBytes(byteData.buffer.asUint8List());
-
-          print('Beep file copied to: $beepFilePath');
-
-          // Step 5: Add beep at the beginning and end of the audio file
-          final command = '-y '
-              '-i $beepFilePath -i $adjustedVolumeFilePath -i $beepFilePath '
-              '-filter_complex "[0:a][1:a][2:a]concat=n=3:v=0:a=1[out]" '
-              '-map "[out]" $finalFilePath';
-
-          final session = await FFmpegKit.execute(command);
-          final returnCode = await session.getReturnCode();
-
-          if (ReturnCode.isSuccess(returnCode)) {
-            print(
-                'Final MP3 file with beeps added at the beginning and end saved at: $finalFilePath');
-            return finalFilePath;
-          } else {
-            print('Error appending beeps to the audio.');
-            final logs = await session.getLogs();
-            final errorLog = logs.map((log) => log.getMessage()).join('\n');
-            print('FFmpeg Full Error Logs:\n$errorLog');
-            return null;
-          }
-        } catch (e) {
-          print('Error processing MP3 file: $e');
-          return null;
-        }
+        print('Voiceover saved at: $filePath');
+        return filePath;
       } else {
-        print('Error: ${response.reasonPhrase}');
-        print('Error Body: ${response.body}');
+        print('Error: ${response.statusCode} - ${response.reasonPhrase}');
         return null;
       }
     } catch (e) {
