@@ -65,14 +65,43 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     _fullTranscription = widget.fullTranscription;
     _initializePlayers();
     _initializeTextControllers();
+
+    // Restore audio file paths if they exist
+    for (int i = 0; i < widget.scenes.length; i++) {
+      final voiceoverUrl = widget.scenes[i].voiceoverUrl;
+      if (voiceoverUrl != null) {
+        _audioPlayers[i].setFilePath(voiceoverUrl);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var player in _audioPlayers) {
+      player.dispose();
+    }
+    // _combinedAudioPlayer?.dispose();
+    for (var controller in _textControllers) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _initializePlayers() {
-    _audioPlayers.clear();
-    _isPlaying.clear();
-    for (var i = 0; i < widget.scenes.length; i++) {
-      _audioPlayers.add(AudioPlayer());
-      _isPlaying.add(false);
+    if (_audioPlayers.isNotEmpty) {
+      // Retain existing players
+      for (int i = 0; i < widget.scenes.length; i++) {
+        if (i >= _audioPlayers.length) {
+          _audioPlayers.add(AudioPlayer());
+          _isPlaying.add(false);
+        }
+      }
+    } else {
+      // Initialize new players
+      for (var i = 0; i < widget.scenes.length; i++) {
+        _audioPlayers.add(AudioPlayer());
+        _isPlaying.add(false);
+      }
     }
   }
 
@@ -589,48 +618,50 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
 
   Future<void> _mapTranscriptionToScenes(
       List<Map<String, String>> transcription) async {
+    // Step 1: Calculate scene boundaries
+    List<Map<String, int>> sceneBoundaries = [];
     int cumulativeStartTime = 0;
-    int currentSceneIndex = 0;
-    String accumulatedText = '';
 
-    // Iterate through scenes and map transcription text based on timestamps
-    while (currentSceneIndex < widget.scenes.length) {
-      Scene currentScene = widget.scenes[currentSceneIndex];
+    for (var scene in widget.scenes) {
       int sceneDurationInMs =
-          await _voiceoverService.getAudioDurationForScene(currentScene);
-      int sceneEndTime = cumulativeStartTime + sceneDurationInMs;
+          await _voiceoverService.getAudioDurationForScene(scene);
+      sceneBoundaries.add({
+        'startTime': cumulativeStartTime,
+        'endTime':
+            cumulativeStartTime + sceneDurationInMs - 1, // Exclusive boundary
+      });
+      cumulativeStartTime += sceneDurationInMs;
+    }
 
-      // Accumulate transcription text for the current scene
-      for (int i = 0; i < transcription.length; i++) {
-        var line = transcription[i];
+    // Step 2: Assign transcription text to each scene
+    for (int i = 0; i < widget.scenes.length; i++) {
+      var boundaries = sceneBoundaries[i];
+      var scene = widget.scenes[i];
+
+      // Collect transcription lines belonging exclusively to this scene
+      List<Map<String, String>> sceneLines = transcription.where((line) {
         int timestampInMs = _voiceoverService
             .convertTimestampToMilliseconds(line['timestamp']!);
+        return timestampInMs >= boundaries['startTime']! &&
+            timestampInMs <= boundaries['endTime']!;
+      }).toList();
 
-        if (timestampInMs >= cumulativeStartTime &&
-            timestampInMs < sceneEndTime) {
-          accumulatedText += ' ${line['text']}';
-        }
+      // Accumulate text for the scene
+      String accumulatedText =
+          sceneLines.map((line) => line['text']!).join(' ');
 
-        // If the timestamp exceeds the scene boundary or it's the last transcription item
-        if (timestampInMs >= sceneEndTime || i == transcription.length - 1) {
-          setState(() {
-            widget.scenes[currentSceneIndex].text = accumulatedText.trim();
-            _textControllers[currentSceneIndex].text =
-                accumulatedText.trim(); // Update TextField controller
-          });
+      // Assign text to the scene and update TextField
+      setState(() {
+        scene.text = accumulatedText.trim();
+        _textControllers[i].text = accumulatedText.trim();
+      });
 
-          // Move to the next scene
-          currentSceneIndex++;
-          if (currentSceneIndex < widget.scenes.length) {
-            cumulativeStartTime = sceneEndTime;
-            accumulatedText = ''; // Reset accumulated text for the next scene
-          } else {
-            // No more scenes left to process
-            return;
-          }
-
-          break; // Break to process the next scene
-        }
+      // Debugging: Log scene assignments
+      print(
+          "Scene $i: Start=${boundaries['startTime']}, End=${boundaries['endTime']}");
+      for (var line in sceneLines) {
+        print(
+            "Mapped line to Scene $i: ${line['timestamp']} - ${line['text']}");
       }
     }
   }

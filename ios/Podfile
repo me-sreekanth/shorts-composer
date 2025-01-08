@@ -32,7 +32,7 @@ target 'Runner' do
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
-  # Add the GoogleSignIn pod
+  # Add the GoogleSignIn pod if required
   pod 'GoogleSignIn'
 
   target 'RunnerTests' do
@@ -46,7 +46,11 @@ post_install do |installer|
 
     # Ensure all build configurations use frameworks
     target.build_configurations.each do |config|
+      # Exclude arm64 architecture for simulators to avoid M1/M2-related issues
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+
+      # Set consistent deployment target for all pods
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.1'
     end
   end
 end

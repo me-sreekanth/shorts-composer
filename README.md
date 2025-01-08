@@ -33,6 +33,7 @@ Pending items:
 4. Preview issue
 5. Allow only a fixed size of the watermark
 6. Keyboard issue in the voiceovers screen
+7. Make the upload youtube settings for Production
 
 
 Future plans:
@@ -47,6 +48,10 @@ Future plans:
 
 
 
+[Voiceover] [generation] [ngrok-api]
+
+1. docker compose up --build
+2. ngrok http --hostname=walrus-complete-lynx.ngrok-free.app 5050
 
 
 Working animations
