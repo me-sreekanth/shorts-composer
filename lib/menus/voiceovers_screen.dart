@@ -233,7 +233,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                   ),
                 ),
               ),
-              _buildTranscribeAndPlayerSection(),
+              // _buildTranscribeAndPlayerSection(),
             ],
           ),
         );
@@ -352,10 +352,10 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
               ],
             ),
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _buildDraggableBottomSheet(),
-          ),
+          // Align(
+          //   alignment: Alignment.bottomCenter,
+          //   child: _buildDraggableBottomSheet(),
+          // ),
           // if (_isLoading) CircularProgressIndicator(),
         ],
       ),
