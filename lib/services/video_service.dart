@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
 import 'package:just_audio/just_audio.dart';
@@ -7,6 +9,8 @@ import 'dart:math';
 import 'package:flutter/services.dart'; // For loading assets
 import 'package:shorts_composer/models/scene.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shorts_composer/services/config_service.dart';
+import 'package:http/http.dart' as http;
 
 class VideoService {
   String? backgroundMusicPath;
@@ -213,6 +217,11 @@ class VideoService {
 
       String finalVideoPath = outputVideoPath;
 
+      //generate subtitles
+      final audioPath = await extractAudioFromVideo(finalVideoPath);
+      await _transcribeCombinedVoiceovers(audioPath);
+
+      print('subtitlesPath: $subtitlesPath');
       // Apply subtitles to the final video if available
       if (subtitlesPath != null && _doesFileExist(subtitlesPath!)) {
         progressNotifier.value = 'Applying subtitles...';
@@ -296,5 +305,140 @@ class VideoService {
       progressNotifier.value = 'Error during video generation.';
       throw Exception('Error creating video: $e');
     }
+  }
+
+  Future<void> _transcribeCombinedVoiceovers(String audioPath) async {
+    try {
+      print('combinedAudioPath: $audioPath');
+      if (audioPath != null) {
+        // Pass both the scenes and the onAssFileGenerated callback
+        String assFilePath = await transcribeAndGenerateAss(audioPath);
+        subtitlesPath = assFilePath;
+        print('assFilePath: $assFilePath');
+      }
+    } catch (e) {
+      print('Exception during transcription: $e');
+    } finally {}
+  }
+
+  /// Extracts audio from a video file and returns the generated MP3 file path.
+  Future<String> extractAudioFromVideo(String videoPath) async {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final String audioOutputPath =
+        '${directory.path}/${videoPath.split('/').last}.mp3';
+
+    final extractAudioCommand = [
+      '-y', '-i', videoPath, // Input video
+      '-vn', // Remove video stream
+      '-acodec', 'libmp3lame', // Use MP3 codec
+      '-q:a', '3', // Quality: Lower is better (3 is decent quality)
+      audioOutputPath
+    ];
+
+    print('Extracting audio from video: $videoPath');
+
+    var session = await FFmpegKit.execute(extractAudioCommand.join(' '));
+    var returnCode = await session.getReturnCode();
+
+    if (ReturnCode.isSuccess(returnCode)) {
+      print('Audio extracted successfully: $audioOutputPath');
+      return audioOutputPath;
+    } else {
+      print('Error extracting audio from video');
+      throw Exception('FFmpeg failed to extract audio from video');
+    }
+  }
+
+  Future<String> transcribeAndGenerateAss(String audioFilePath) async {
+    String contentType =
+        audioFilePath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
+
+    Uri url = Uri.parse(ConfigService.get('transcribeVoiceoversUrl'));
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Token ${ConfigService.get('deepgramApiToken')}',
+        'Content-Type': contentType,
+      },
+      body: File(audioFilePath).readAsBytesSync(),
+    );
+
+    print('response: $response.body');
+    if (response.statusCode == 200) {
+      final decodedResponse = jsonDecode(response.body);
+      List<dynamic> words =
+          decodedResponse['results']['channels'][0]['alternatives'][0]['words'];
+      print('words: $words');
+      // Generate ASS file
+      return await _createAssFileFromApi(words);
+    }
+    throw Exception("Failed to transcribe audio");
+  }
+
+  Future<String> _createAssFileFromApi(List<dynamic> words) async {
+    Directory? directory = await getApplicationDocumentsDirectory();
+    final Directory appDir = Directory('${directory!.path}/ShortsComposer');
+    if (!(await appDir.exists())) {
+      await appDir.create(recursive: true);
+    }
+    final String assFilePath = '${appDir.path}/generated_subtitles.ass';
+    final File assFile = File(assFilePath);
+    IOSink sink = assFile.openWrite();
+
+    // Write the ASS file headers and styles
+    String fontName = "impact";
+    int fontSize = 20;
+    String primaryColor = "&H00FFFFFF";
+    String backColor = "&H0000FFFF";
+    String outlineColor = "&H00000000";
+    int outlineThickness = 20;
+    int shadowThickness = 20;
+    int alignment = 2;
+    int bold = -1;
+    int verticalMargin = 100;
+
+    // Write script info section
+    sink.writeln('[Script Info]');
+    sink.writeln('Title: Transcription');
+    sink.writeln('ScriptType: v4.00+');
+    sink.writeln('Collisions: Normal');
+    sink.writeln('PlayDepth: 0');
+    sink.writeln('Timer: 100.0000');
+
+    // Write styles section
+    sink.writeln('[V4+ Styles]');
+    sink.writeln(
+        'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding');
+    sink.writeln(
+        'Style: Default,$fontName,$fontSize,$primaryColor,$primaryColor,$outlineColor,$backColor,$bold,0,0,0,100,100,0,0,3,$outlineThickness,$shadowThickness,$alignment,10,10,$verticalMargin,1');
+
+    // Write events section and dialogue lines
+    sink.writeln('[Events]');
+    sink.writeln(
+        'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text');
+    for (var word in words) {
+      String start = _formatTime(word['start']);
+      String end = _formatTime(word['end']);
+      String text = word['punctuated_word'];
+
+      print('Writing subtitle: Start: $start, End: $end, Text: $text');
+      sink.writeln(
+          'Dialogue: 0,$start,$end,Default,,0,0,$verticalMargin,,{\\an2}$text');
+    }
+
+    await sink.close();
+    print(
+        'ASS file created. Path: $assFilePath, Size: ${assFile.lengthSync()} bytes');
+    // onAssFileGenerated(assFilePath);
+    return assFilePath;
+  }
+
+  /// Helper function to format time in the HH:MM:SS.xx format for ASS subtitles
+  String _formatTime(double time) {
+    int hours = time ~/ 3600;
+    int minutes = (time % 3600) ~/ 60;
+    int seconds = (time % 60).toInt();
+    int milliseconds = ((time % 1) * 100).toInt();
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${milliseconds.toString().padLeft(2, '0')}';
   }
 }
