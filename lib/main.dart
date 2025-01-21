@@ -12,7 +12,6 @@ import 'package:shorts_composer/menus/voiceovers_screen.dart';
 import 'package:shorts_composer/menus/upload_screen.dart';
 import 'package:path/path.dart' as p;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:just_audio/just_audio.dart'; // Import for audio player
 import 'package:lottie/lottie.dart'; // Import Lottie package
 
 void main() async {
@@ -39,7 +38,7 @@ void enableDebugLogging() {
 class ErrorApp extends StatelessWidget {
   final String errorMessage;
 
-  ErrorApp(this.errorMessage);
+  const ErrorApp(this.errorMessage, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +60,7 @@ class App extends StatelessWidget {
         future: ConfigService.loadConfig(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(
+            return const Scaffold(
               body: Center(
                 child: CircularProgressIndicator(),
               ),
@@ -112,12 +111,6 @@ class _AppBodyState extends State<AppBody> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  // State for combined player and transcription data
-  AudioPlayer _combinedAudioPlayer = AudioPlayer();
-  bool _isCombinedPlaying = false;
-  String? _combinedAudioPath;
-  List<Map<String, String>> _fullTranscription = [];
-
   // Method to check if the "Preview" button should be enabled
   bool _isPreviewEnabled() {
     // Check if all scenes have an image and a voiceover selected
@@ -151,9 +144,6 @@ class _AppBodyState extends State<AppBody> {
       });
     });
     _googleSignIn.signInSilently();
-
-    // Initialize audio player
-    _combinedAudioPlayer = AudioPlayer();
   }
 
   @override
@@ -161,7 +151,6 @@ class _AppBodyState extends State<AppBody> {
     // Dispose the controllers and audio player when the widget is disposed
     _titleController.dispose();
     _descriptionController.dispose();
-    _combinedAudioPlayer.dispose();
     super.dispose();
   }
 
@@ -205,13 +194,6 @@ class _AppBodyState extends State<AppBody> {
     setState(() {
       _selectedIndex = index;
     });
-  }
-
-  void _onMusicSelected(String path) {
-    setState(() {
-      _backgroundMusicPath = path;
-    });
-    print('Background music selected: $_backgroundMusicPath');
   }
 
   // Handle watermark selection
@@ -284,14 +266,14 @@ class _AppBodyState extends State<AppBody> {
           builder: (context, progress, child) {
             return AlertDialog(
               contentPadding:
-                  EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                  const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
               content: Container(
                 width: 300, // Set width and height equal for a square dialog
                 height: 220,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       'Generating Video',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -311,7 +293,7 @@ class _AppBodyState extends State<AppBody> {
                     // Status text below the Lottie animation
                     Text(
                       progress,
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                       textAlign: TextAlign.center, // Center align the text
                     ),
                   ],
@@ -320,7 +302,7 @@ class _AppBodyState extends State<AppBody> {
               actions: [
                 TextButton(
                   onPressed: _cancelVideoGeneration,
-                  child: Text('Cancel'),
+                  child: const Text('Cancel'),
                 ),
               ],
             );
@@ -338,31 +320,6 @@ class _AppBodyState extends State<AppBody> {
     });
   }
 
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 20),
-              Text('Generating video... Please wait.'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: _cancelVideoGeneration,
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showError(String message) {
     final snackBar = SnackBar(content: Text(message));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
@@ -372,20 +329,6 @@ class _AppBodyState extends State<AppBody> {
   void _updateSceneText(int index, String newText) {
     setState(() {
       _scenes[index].text = newText; // Update the text of the specific scene
-    });
-  }
-
-  void _onCombinedPlayerUpdate(
-    AudioPlayer player,
-    bool isPlaying,
-    String? audioPath,
-    List<Map<String, String>> transcription,
-  ) {
-    setState(() {
-      _combinedAudioPlayer = player;
-      _isCombinedPlaying = isPlaying;
-      _combinedAudioPath = audioPath;
-      _fullTranscription = transcription; // Update transcription data
     });
   }
 
@@ -427,22 +370,12 @@ class _AppBodyState extends State<AppBody> {
         return VoiceoversScreen(
           scenes: _scenes,
           apiService: ApiService(),
-          combinedAudioPlayer: _combinedAudioPlayer,
-          isCombinedPlaying: _isCombinedPlaying,
-          combinedAudioPath: _combinedAudioPath,
-          fullTranscription: _fullTranscription, // Pass the transcription data
-          onAssFileGenerated: (String assFilePath) {
-            setState(() {
-              _assFilePath = assFilePath;
-            });
-          },
           onVoiceoverSelected: (int index, String voiceoverUrl,
               {bool isLocal = false}) {
             setState(() {
               _scenes[index].updateVoiceoverUrl(voiceoverUrl, isLocal: isLocal);
             });
           },
-          onCombinedPlayerUpdate: _onCombinedPlayerUpdate,
           onSceneTextUpdated: _updateSceneText,
         );
       case 2:
