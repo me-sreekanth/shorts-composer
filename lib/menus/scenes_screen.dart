@@ -60,6 +60,10 @@ class _ScenesScreenState extends State<ScenesScreen> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       widget.onImageSelected(index, pickedFile.path, isLocal: true);
+      // Clear the prompt input field
+      _controllers[index]?.clear();
+      // Update the description in the widget.scenes array
+      widget.scenes[index].description = '';
     }
   }
 
@@ -72,7 +76,7 @@ class _ScenesScreenState extends State<ScenesScreen> {
     final imagePath = await ApiService().generateImage(prompt, index);
 
     if (imagePath != null) {
-      widget.onImageSelected(index, imagePath, isLocal: true);
+      widget.onImageSelected(index, imagePath, isLocal: false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to generate image.')),
@@ -88,12 +92,55 @@ class _ScenesScreenState extends State<ScenesScreen> {
     widget.onImageSelected(index, '', isLocal: false);
   }
 
-  void _deleteScene(int index) {
+  void _deleteScene(int index) async {
+    // Add a fade-out animation when deleting a scene
+    setState(() {
+      _isLoading[index] = true; // Show loading state during deletion
+    });
+
+    await Future.delayed(const Duration(milliseconds: 300)); // Simulate delay
+
     setState(() {
       widget.scenes.removeAt(index);
+
+      // Update scene numbers for remaining scenes
+      for (int i = index; i < widget.scenes.length; i++) {
+        widget.scenes[i].sceneNumber = i + 1;
+      }
+
+      // Remove the controller and loading state for the deleted scene
       _controllers.remove(index);
       _isLoading.remove(index);
+
+      // Shift controllers and loading states for remaining scenes
+      final newControllers = <int, TextEditingController>{};
+      final newLoadingStates = <int, bool>{};
+
+      for (int i = 0; i < widget.scenes.length; i++) {
+        newControllers[i] = _controllers[i] ?? TextEditingController();
+        newLoadingStates[i] = _isLoading[i] ?? false;
+      }
+
+      _controllers = newControllers;
+      _isLoading = newLoadingStates;
     });
+
+    // Animate to the previous or next scene after deletion
+    if (_pageController.hasClients) {
+      if (index >= widget.scenes.length) {
+        _pageController.animateToPage(
+          widget.scenes.length - 1,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+        );
+      }
+    }
   }
 
   void _addNewScene() {
@@ -131,8 +178,9 @@ class _ScenesScreenState extends State<ScenesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double imageHeight = MediaQuery.of(context).size.height * 0.5;
-    double imageWidth = MediaQuery.of(context).size.width * 0.7;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     final int totalScenes = widget.scenes.length;
     final int scenesWithImages = _countScenesWithImages();
@@ -141,28 +189,34 @@ class _ScenesScreenState extends State<ScenesScreen> {
       appBar: AppBar(
         title: Text(
           'Scenes with images ($scenesWithImages/$totalScenes)',
-          style: const TextStyle(
-            fontSize: 20,
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onPrimary,
           ),
         ),
+        backgroundColor: colorScheme.primary,
+        elevation: 4,
       ),
       body: SafeArea(
         child: Column(
           children: [
             if (widget.scenes.isEmpty) ...[
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.image_not_supported,
-                          size: 80, color: Colors.grey),
-                      SizedBox(height: 20),
+                          size: 80,
+                          color: colorScheme.onSurface.withOpacity(0.5)),
+                      const SizedBox(height: 20),
                       Text('No Scenes Available',
-                          style: TextStyle(fontSize: 18, color: Colors.grey)),
-                      SizedBox(height: 10),
+                          style: textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.7))),
+                      const SizedBox(height: 10),
                       Text('Add scenes to start creating your project.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey)),
+                          style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.5))),
                     ],
                   ),
                 ),
@@ -175,140 +229,302 @@ class _ScenesScreenState extends State<ScenesScreen> {
                   itemBuilder: (context, index) {
                     final scene = widget.scenes[index];
 
-                    return Transform.scale(
-                      scale: (1 - (_currentPage - index).abs() * 0.15)
-                          .clamp(0.85, 1.0),
-                      child: Card(
-                        elevation: 4,
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: SingleChildScrollView(
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Transform.scale(
+                        key: ValueKey(scene.sceneNumber),
+                        scale: (1 - (_currentPage - index).abs() * 0.15)
+                            .clamp(0.85, 1.0),
+                        child: Card(
+                          elevation: 6,
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           child: Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Description TextField
-                                TextField(
-                                  controller: _controllers[index],
-                                  onChanged: (value) =>
-                                      widget.onDescriptionChanged(index, value),
-                                  decoration: const InputDecoration(
-                                    labelText:
-                                        'Prompt for generating the image',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-                                // Image Container with Clear Button
-                                Stack(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: scene.imageUrl != null &&
-                                              scene.imageUrl!.isNotEmpty
-                                          ? () =>
-                                              OpenFilex.open(scene.imageUrl!)
-                                          : null,
-                                      child: Container(
-                                        height: imageHeight,
-                                        width: imageWidth,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: scene.imageUrl != null &&
-                                                scene.imageUrl!.isNotEmpty
-                                            ? ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                child: Image.file(
-                                                  File(scene.imageUrl!),
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              )
-                                            : (_isLoading[index] ?? false)
-                                                ? Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      CircularProgressIndicator(),
-                                                      SizedBox(height: 10),
-                                                      Text(
-                                                          'Generating image...',
-                                                          style: TextStyle(
-                                                              color: Colors
-                                                                  .grey[700])),
-                                                    ],
-                                                  )
-                                                : Center(
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Icon(Icons.image,
-                                                            size: 60,
-                                                            color: Colors
-                                                                .grey[700]),
-                                                        SizedBox(height: 10),
-                                                        Text(
-                                                            'No Image Selected',
-                                                            style: TextStyle(
-                                                                color:
-                                                                    Colors.grey[
-                                                                        700])),
-                                                        SizedBox(height: 5),
-                                                        Text(
-                                                            'Tap "Pick Image" or "Generate Image"',
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color:
-                                                                    Colors.grey[
-                                                                        600])),
-                                                      ],
-                                                    ),
-                                                  ),
-                                      ),
-                                    ),
-                                    if (scene.imageUrl != null &&
-                                        scene.imageUrl!.isNotEmpty)
-                                      Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: GestureDetector(
-                                          onTap: () => _clearImage(index),
-                                          child: CircleAvatar(
-                                            backgroundColor: Colors.black54,
-                                            radius: 16,
-                                            child: Icon(Icons.clear,
-                                                color: Colors.white, size: 18),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                SizedBox(height: 10),
+                                // Scene Number and Delete Button (always visible)
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    ElevatedButton(
-                                        onPressed: () => _pickImage(index),
-                                        child: Text('Pick Image')),
-                                    ElevatedButton(
-                                        onPressed: () => _generateImage(index),
-                                        child: Text('Generate Image')),
+                                    Text(
+                                      'Scene ${scene.sceneNumber}',
+                                      style: textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
                                     IconButton(
-                                        onPressed: () => _deleteScene(index),
-                                        icon: Icon(Icons.delete,
-                                            color: Colors.red)),
+                                      onPressed: () => _deleteScene(index),
+                                      icon: Icon(Icons.delete,
+                                          color: colorScheme.error),
+                                      tooltip: 'Delete Scene',
+                                    ),
                                   ],
                                 ),
+                                const SizedBox(height: 16),
+                                // Image Section (Expands to fill remaining space)
+                                Expanded(
+                                  child: Stack(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: scene.imageUrl != null &&
+                                                scene.imageUrl!.isNotEmpty
+                                            ? () =>
+                                                OpenFilex.open(scene.imageUrl!)
+                                            : null,
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: double
+                                              .infinity, // Fill remaining space
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.surfaceVariant,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: scene.imageUrl != null &&
+                                                  scene.imageUrl!.isNotEmpty
+                                              ? ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  child: Image.file(
+                                                    File(scene.imageUrl!),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : (_isLoading[index] ?? false)
+                                                  ? Center(
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          CircularProgressIndicator(
+                                                            color: colorScheme
+                                                                .primary,
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 16),
+                                                          Text(
+                                                              'Generating image...',
+                                                              style: textTheme
+                                                                  .bodyMedium
+                                                                  ?.copyWith(
+                                                                      color: colorScheme
+                                                                          .onSurface
+                                                                          .withOpacity(
+                                                                              0.7))),
+                                                        ],
+                                                      ),
+                                                    )
+                                                  : Center(
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(Icons.image,
+                                                              size: 60,
+                                                              color: colorScheme
+                                                                  .onSurface
+                                                                  .withOpacity(
+                                                                      0.5)),
+                                                          const SizedBox(
+                                                              height: 16),
+                                                          ElevatedButton.icon(
+                                                            onPressed: () =>
+                                                                _pickImage(
+                                                                    index),
+                                                            icon: Icon(
+                                                                Icons
+                                                                    .photo_library,
+                                                                color: colorScheme
+                                                                    .onPrimary),
+                                                            label: Text(
+                                                                'Pick Image',
+                                                                style: textTheme
+                                                                    .labelLarge
+                                                                    ?.copyWith(
+                                                                        color: colorScheme
+                                                                            .onPrimary)),
+                                                            style:
+                                                                ElevatedButton
+                                                                    .styleFrom(
+                                                              backgroundColor:
+                                                                  colorScheme
+                                                                      .primary,
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      vertical:
+                                                                          12,
+                                                                      horizontal:
+                                                                          16),
+                                                              shape:
+                                                                  RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                        ),
+                                      ),
+                                      if (scene.imageUrl != null &&
+                                          scene.imageUrl!.isNotEmpty)
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: GestureDetector(
+                                            onTap: () => _clearImage(index),
+                                            child: CircleAvatar(
+                                              backgroundColor:
+                                                  colorScheme.errorContainer,
+                                              radius: 16,
+                                              child: Icon(Icons.clear,
+                                                  color: colorScheme
+                                                      .onErrorContainer,
+                                                  size: 18),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                // "OR" Label and Prompt Section (only shown if no image is picked or if the image is generated)
+                                if (scene.imageUrl == null ||
+                                    scene.imageUrl!.isEmpty ||
+                                    !scene.isLocalImage)
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 16),
+                                      // "OR" Label (only shown if no image is picked)
+                                      if (scene.imageUrl == null ||
+                                          scene.imageUrl!.isEmpty)
+                                        Center(
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8.0),
+                                            child: Text(
+                                              'OR',
+                                              style:
+                                                  textTheme.bodyLarge?.copyWith(
+                                                color: colorScheme.onSurface
+                                                    .withOpacity(0.7),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      // Prompt Section
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.black.withOpacity(0.1),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: TextField(
+                                          controller: _controllers[index],
+                                          onChanged: (value) {
+                                            widget.onDescriptionChanged(
+                                                index, value);
+                                            setState(
+                                                () {}); // Rebuild the UI to show/hide the Generate button
+                                          },
+                                          maxLines: 5, // Allow up to 5 lines
+                                          minLines:
+                                              1, // Start with a single line
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Prompt for generating the image',
+                                            labelStyle:
+                                                textTheme.bodyMedium?.copyWith(
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.7),
+                                            ),
+                                            floatingLabelBehavior:
+                                                FloatingLabelBehavior.auto,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                  color: colorScheme.outline),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                  color: colorScheme.primary,
+                                                  width: 2),
+                                            ),
+                                            filled: true,
+                                            fillColor: colorScheme.surface,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      if (_controllers[index]
+                                              ?.text
+                                              .isNotEmpty ==
+                                          true)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 8.0),
+                                          child: Align(
+                                            alignment: Alignment.centerRight,
+                                            child: ElevatedButton.icon(
+                                              onPressed: () =>
+                                                  _generateImage(index),
+                                              icon: Icon(
+                                                Icons.auto_awesome,
+                                                size: 18,
+                                                color: colorScheme.onPrimary,
+                                              ),
+                                              label: Text(
+                                                'Generate',
+                                                style: textTheme.labelLarge
+                                                    ?.copyWith(
+                                                  color: colorScheme.onPrimary,
+                                                ),
+                                              ),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    colorScheme.primary,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                               ],
                             ),
                           ),
@@ -319,12 +535,15 @@ class _ScenesScreenState extends State<ScenesScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: SmoothPageIndicator(
                   controller: _pageController,
                   count: widget.scenes.length,
-                  effect: const WormEffect(
-                      dotHeight: 8, dotWidth: 8, activeDotColor: Colors.red),
+                  effect: WormEffect(
+                      dotHeight: 8,
+                      dotWidth: 8,
+                      activeDotColor: colorScheme.primary,
+                      dotColor: colorScheme.surfaceVariant),
                 ),
               ),
             ],
@@ -332,18 +551,17 @@ class _ScenesScreenState extends State<ScenesScreen> {
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton.icon(
                 onPressed: _addNewScene,
-                icon: const Icon(
-                  Icons.add,
-                  color: Colors.white,
-                ),
-                label: const Text(
-                  'Add New Scene',
-                  style: TextStyle(color: Colors.white),
-                ),
+                icon: Icon(Icons.add, color: colorScheme.onPrimary),
+                label: Text('Add New Scene',
+                    style: textTheme.labelLarge
+                        ?.copyWith(color: colorScheme.onPrimary)),
                 style: ElevatedButton.styleFrom(
                   padding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                  backgroundColor: Colors.red,
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  backgroundColor: colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),

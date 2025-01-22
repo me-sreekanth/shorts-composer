@@ -1,5 +1,5 @@
 class Scene {
-  final int sceneNumber;
+  int sceneNumber;
   final int duration;
   String text;
   String description;
