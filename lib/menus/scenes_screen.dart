@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shorts_composer/models/scene.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:shorts_composer/services/api_service.dart'; // Importing open_filex package
+import 'package:shorts_composer/services/api_service.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class ScenesScreen extends StatefulWidget {
   final List<Scene> scenes;
@@ -11,7 +12,8 @@ class ScenesScreen extends StatefulWidget {
   final Function(int, String) onDescriptionChanged;
   final Future<void> Function(int) onGenerateImage;
 
-  ScenesScreen({
+  const ScenesScreen({
+    super.key,
     required this.scenes,
     required this.onImageSelected,
     required this.onDescriptionChanged,
@@ -23,20 +25,36 @@ class ScenesScreen extends StatefulWidget {
 }
 
 class _ScenesScreenState extends State<ScenesScreen> {
-  bool _isLoading = false;
-  int _loadingIndex = -1;
-  Map<int, TextEditingController> _controllers = {};
-  final ScrollController _scrollController = ScrollController();
+  final PageController _pageController = PageController(viewportFraction: 0.8);
+  double _currentPage = 0;
+  Map<int, TextEditingController> _controllers = {}; // Persistent controllers
+  Map<int, bool> _isLoading = {}; // Loading state per scene
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      if (_pageController.hasClients) {
+        setState(() {
+          _currentPage = _pageController.page ?? 0;
+        });
+      }
+    });
+
+    for (int i = 0; i < widget.scenes.length; i++) {
+      _controllers[i] =
+          TextEditingController(text: widget.scenes[i].description);
+      _isLoading[i] = false;
+    }
+  }
 
   @override
   void dispose() {
-    // Clean up the controllers when the widget is disposed
-    _controllers.values.forEach((controller) => controller.dispose());
-    _scrollController.dispose();
+    _pageController.dispose();
+    _controllers.forEach((_, controller) => controller.dispose());
     super.dispose();
   }
 
-  // Function to pick an image from the gallery
   void _pickImage(int index) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -45,83 +63,77 @@ class _ScenesScreenState extends State<ScenesScreen> {
     }
   }
 
-  // Function to generate an image for a scene
   Future<void> _generateImage(int index) async {
     setState(() {
-      _isLoading = true;
-      _loadingIndex = index;
+      _isLoading[index] = true;
     });
 
-    final prompt = widget.scenes[index].description;
+    final prompt = _controllers[index]?.text ?? '';
     final imagePath = await ApiService().generateImage(prompt, index);
 
     if (imagePath != null) {
       widget.onImageSelected(index, imagePath, isLocal: true);
     } else {
-      // Handle any error, e.g., show a toast or alert
-      print('Error: Image generation failed.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to generate image.')),
+      );
     }
 
     setState(() {
-      _isLoading = false;
-      _loadingIndex = -1;
+      _isLoading[index] = false;
     });
   }
 
-  // Function to clear the image
   void _clearImage(int index) {
-    setState(() {
-      widget.onImageSelected(index, '',
-          isLocal: false); // Ensure image path is cleared
-    });
+    widget.onImageSelected(index, '', isLocal: false);
   }
 
-  // Function to add a new empty scene to the list
-  void _addNewScene() {
-    setState(() {
-      final newSceneNumber = widget.scenes.length + 1;
-      widget.scenes.add(
-        Scene(
-          sceneNumber: newSceneNumber,
-          duration: 5, // Default duration (can be modified by the user)
-          text: '', // Empty text initially
-          description: '', // Empty description initially
-        ),
-      );
-    });
-
-    // Scroll to bottom after adding a new scene
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
-  }
-
-  // Function to delete a scene
   void _deleteScene(int index) {
     setState(() {
       widget.scenes.removeAt(index);
-      _controllers.remove(index); // Remove the corresponding controller
+      _controllers.remove(index);
+      _isLoading.remove(index);
     });
   }
 
-  // Helper function to count scenes with images
+  void _addNewScene() {
+    setState(() {
+      int newIndex = widget.scenes.length;
+      widget.scenes.add(
+        Scene(
+          sceneNumber: newIndex + 1,
+          duration: 5,
+          text: '',
+          description: '',
+        ),
+      );
+
+      _controllers[newIndex] = TextEditingController();
+      _isLoading[newIndex] = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          widget.scenes.length - 1,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   int _countScenesWithImages() {
     return widget.scenes
         .where((scene) => scene.imageUrl != null && scene.imageUrl!.isNotEmpty)
         .length;
   }
 
-  // Function to open the picked or generated image in the gallery
-  void _openImage(String imagePath) {
-    OpenFilex.open(imagePath); // Using open_filex instead of open_file
-  }
-
   @override
   Widget build(BuildContext context) {
+    double imageHeight = MediaQuery.of(context).size.height * 0.5;
+    double imageWidth = MediaQuery.of(context).size.width * 0.7;
+
     final int totalScenes = widget.scenes.length;
     final int scenesWithImages = _countScenesWithImages();
 
@@ -129,248 +141,214 @@ class _ScenesScreenState extends State<ScenesScreen> {
       appBar: AppBar(
         title: Text(
           'Scenes with images ($scenesWithImages/$totalScenes)',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 20,
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: widget.scenes.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.image_not_supported,
-                            size: 80, color: Colors.grey),
-                        SizedBox(height: 20),
-                        Text(
-                          'No Scenes Available',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Add scenes to start creating your project.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            itemCount: widget.scenes.length,
-                            itemBuilder: (context, index) {
-                              final scene = widget.scenes[index];
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (widget.scenes.isEmpty) ...[
+              const Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.image_not_supported,
+                          size: 80, color: Colors.grey),
+                      SizedBox(height: 20),
+                      Text('No Scenes Available',
+                          style: TextStyle(fontSize: 18, color: Colors.grey)),
+                      SizedBox(height: 10),
+                      Text('Add scenes to start creating your project.',
+                          style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: widget.scenes.length,
+                  itemBuilder: (context, index) {
+                    final scene = widget.scenes[index];
 
-                              // Initialize TextEditingController for each scene
-                              if (!_controllers.containsKey(index)) {
-                                _controllers[index] = TextEditingController(
-                                  text: scene.description,
-                                );
-                              }
-
-                              return Stack(
-                                children: [
-                                  Card(
-                                    elevation: 4,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    margin: const EdgeInsets.symmetric(
-                                        vertical: 10),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          TextField(
-                                            onChanged: (newDescription) =>
-                                                widget.onDescriptionChanged(
-                                                    index, newDescription),
-                                            decoration: InputDecoration(
-                                              hintText: 'Enter description',
-                                              labelText: 'Description',
-                                              border: OutlineInputBorder(),
-                                            ),
-                                            controller: _controllers[
-                                                index], // Use the persistent controller
-                                            maxLines:
-                                                null, // Allows multiline input
-                                          ),
-                                          SizedBox(height: 10),
-                                          Stack(
-                                            children: [
-                                              GestureDetector(
-                                                onTap: scene.imageUrl != null &&
-                                                        scene.imageUrl!
-                                                            .isNotEmpty
-                                                    ? () => _openImage(
-                                                        scene.imageUrl!)
-                                                    : null,
-                                                child: Container(
-                                                  height:
-                                                      300, // Fixed height for the image area
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey[300],
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                  child: scene.imageUrl !=
-                                                              null &&
-                                                          scene.imageUrl!
-                                                              .isNotEmpty
-                                                      ? ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(8),
-                                                          child: Image.file(
-                                                            File(scene
-                                                                .imageUrl!),
-                                                            height: 300,
-                                                            width:
-                                                                double.infinity,
-                                                            fit: BoxFit.cover,
-                                                          ),
-                                                        )
-                                                      : Center(
-                                                          child: _isLoading &&
-                                                                  _loadingIndex ==
-                                                                      index
-                                                              ? Column(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .center,
-                                                                  children: [
-                                                                    CircularProgressIndicator(),
-                                                                    SizedBox(
-                                                                        height:
-                                                                            10),
-                                                                    Text(
-                                                                      'Generating image...',
-                                                                      style: TextStyle(
-                                                                          color:
-                                                                              Colors.grey[600]),
-                                                                    ),
-                                                                  ],
-                                                                )
-                                                              : Text(
-                                                                  'No Image',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .grey),
-                                                                ),
-                                                        ),
+                    return Transform.scale(
+                      scale: (1 - (_currentPage - index).abs() * 0.15)
+                          .clamp(0.85, 1.0),
+                      child: Card(
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Description TextField
+                                TextField(
+                                  controller: _controllers[index],
+                                  onChanged: (value) =>
+                                      widget.onDescriptionChanged(index, value),
+                                  decoration: const InputDecoration(
+                                    labelText:
+                                        'Prompt for generating the image',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                                SizedBox(height: 10),
+                                // Image Container with Clear Button
+                                Stack(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: scene.imageUrl != null &&
+                                              scene.imageUrl!.isNotEmpty
+                                          ? () =>
+                                              OpenFilex.open(scene.imageUrl!)
+                                          : null,
+                                      child: Container(
+                                        height: imageHeight,
+                                        width: imageWidth,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: scene.imageUrl != null &&
+                                                scene.imageUrl!.isNotEmpty
+                                            ? ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: Image.file(
+                                                  File(scene.imageUrl!),
+                                                  fit: BoxFit.cover,
                                                 ),
-                                              ),
-                                              if (scene.imageUrl != null &&
-                                                  scene.imageUrl!.isNotEmpty)
-                                                Positioned(
-                                                  top: 8,
-                                                  right: 8,
-                                                  child: GestureDetector(
-                                                    onTap: () =>
-                                                        _clearImage(index),
-                                                    child: CircleAvatar(
-                                                      backgroundColor:
-                                                          Colors.black54,
-                                                      child: Icon(Icons.clear,
-                                                          color: Colors.white),
+                                              )
+                                            : (_isLoading[index] ?? false)
+                                                ? Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      CircularProgressIndicator(),
+                                                      SizedBox(height: 10),
+                                                      Text(
+                                                          'Generating image...',
+                                                          style: TextStyle(
+                                                              color: Colors
+                                                                  .grey[700])),
+                                                    ],
+                                                  )
+                                                : Center(
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(Icons.image,
+                                                            size: 60,
+                                                            color: Colors
+                                                                .grey[700]),
+                                                        SizedBox(height: 10),
+                                                        Text(
+                                                            'No Image Selected',
+                                                            style: TextStyle(
+                                                                color:
+                                                                    Colors.grey[
+                                                                        700])),
+                                                        SizedBox(height: 5),
+                                                        Text(
+                                                            'Tap "Pick Image" or "Generate Image"',
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color:
+                                                                    Colors.grey[
+                                                                        600])),
+                                                      ],
                                                     ),
                                                   ),
-                                                ),
-                                            ],
-                                          ),
-                                          SizedBox(height: 10),
-                                          Row(
-                                            children: [
-                                              ElevatedButton(
-                                                onPressed: () =>
-                                                    _pickImage(index),
-                                                child: Text(
-                                                  'Pick Image',
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      Colors.blueAccent,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(width: 8),
-                                              ElevatedButton(
-                                                onPressed: () =>
-                                                    _generateImage(index),
-                                                child: Text(
-                                                  'Generate Image',
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.green,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                ),
-                                              ),
-                                              Spacer(),
-                                              IconButton(
-                                                icon: Icon(Icons.delete,
-                                                    color: Colors.red),
-                                                onPressed: () =>
-                                                    _deleteScene(index),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
                                       ),
                                     ),
-                                  ),
-                                ],
-                              );
-                            },
+                                    if (scene.imageUrl != null &&
+                                        scene.imageUrl!.isNotEmpty)
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: GestureDetector(
+                                          onTap: () => _clearImage(index),
+                                          child: CircleAvatar(
+                                            backgroundColor: Colors.black54,
+                                            radius: 16,
+                                            child: Icon(Icons.clear,
+                                                color: Colors.white, size: 18),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    ElevatedButton(
+                                        onPressed: () => _pickImage(index),
+                                        child: Text('Pick Image')),
+                                    ElevatedButton(
+                                        onPressed: () => _generateImage(index),
+                                        child: Text('Generate Image')),
+                                    IconButton(
+                                        onPressed: () => _deleteScene(index),
+                                        icon: Icon(Icons.delete,
+                                            color: Colors.red)),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              onPressed: _addNewScene,
-              icon: Icon(
-                Icons.add,
-                color: Colors.white,
+                      ),
+                    );
+                  },
+                ),
               ),
-              label: Text(
-                'Add New Scene',
-                style: TextStyle(color: Colors.white),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: SmoothPageIndicator(
+                  controller: _pageController,
+                  count: widget.scenes.length,
+                  effect: const WormEffect(
+                      dotHeight: 8, dotWidth: 8, activeDotColor: Colors.red),
+                ),
               ),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                backgroundColor: Colors.red, // Red button
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            ],
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                onPressed: _addNewScene,
+                icon: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Add New Scene',
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                  backgroundColor: Colors.red,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

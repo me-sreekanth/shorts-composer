@@ -16,6 +16,11 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 
+Immediate fix needed before Release version 3
+
+1. Scene screen UI changes
+2. Generating video issue when voiceover selected from local and generating audio
+3. Watermark size restriction
 
 Done:
 7. Create Playstore account
@@ -27,6 +32,7 @@ Partially Done:
 8. Add Splash screen
 
 Pending items:
+1. Add subscribe button animation at the last scene
 1. Flutter upgrade
 2. Crop customisation
 3. Version 2.0
