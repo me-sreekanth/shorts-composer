@@ -310,8 +310,10 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                                       ),
                                     ),
                                     // Pick Voiceover Button (Inside Image Area)
-                                    if (scene.voiceoverUrl == null ||
-                                        scene.voiceoverUrl!.isEmpty)
+                                    if ((scene.voiceoverUrl == null ||
+                                            scene.voiceoverUrl!.isEmpty) &&
+                                        _isTranscribing[index] != true &&
+                                        _isGenerating[index] != true)
                                       Positioned(
                                         bottom: 16,
                                         left: 16,
@@ -322,14 +324,24 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                                         ),
                                       ),
                                     // No Voiceover Selected Content or Audio Player
-                                    Center(
-                                      child: scene.voiceoverUrl != null &&
-                                              scene.voiceoverUrl!.isNotEmpty
-                                          ? _buildAudioPlayerControls(
-                                              player, index)
-                                          : _buildNoVoiceoverPlaceholder(
-                                              colorScheme),
-                                    ),
+                                    if (_isTranscribing[index] != true &&
+                                        _isGenerating[index] != true)
+                                      Center(
+                                        child: scene.voiceoverUrl != null &&
+                                                scene.voiceoverUrl!.isNotEmpty
+                                            ? _buildAudioPlayerControls(
+                                                player, index)
+                                            : _buildNoVoiceoverPlaceholder(
+                                                colorScheme),
+                                      ),
+                                    // Loader for Transcription or Generation
+                                    if (_isTranscribing[index] == true ||
+                                        _isGenerating[index] == true)
+                                      Center(
+                                        child: CircularProgressIndicator(
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -362,15 +374,21 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                                           widget.onSceneTextUpdated(
                                               index, value);
                                         },
-                                        maxLines: 5, // Multiline text field
-                                        minLines: 3, // Minimum 3 lines
+                                        maxLines:
+                                            10, // Increased maxLines to fill space
+                                        minLines:
+                                            5, // Increased minLines to fill space
                                         decoration: InputDecoration(
-                                          hintText:
-                                              'Generate voiceover from text',
-                                          hintStyle:
-                                              textTheme.bodyMedium?.copyWith(
+                                          labelText: scene.voiceoverUrl !=
+                                                      null &&
+                                                  scene.voiceoverUrl!.isNotEmpty
+                                              ? 'Transcript'
+                                              : 'Generate voiceover from text',
+                                          labelStyle:
+                                              textTheme.titleMedium?.copyWith(
+                                            fontSize: 18, // Increased font size
                                             color: colorScheme.onSurface
-                                                .withOpacity(0.5),
+                                                .withOpacity(0.7),
                                           ),
                                           border: OutlineInputBorder(
                                             borderRadius:
@@ -398,37 +416,19 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
                                       // Generate Voiceover Button (Hidden if Voiceover is Picked)
                                       if (scene.voiceoverUrl == null ||
                                           scene.voiceoverUrl!.isEmpty)
-                                        _buildGenerateVoiceoverButton(
-                                            index, colorScheme, textTheme),
-                                      // Progress Indicator for Transcription
-                                      if (_isTranscribing[index] ?? false)
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 16.0),
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                              color: colorScheme.primary,
-                                            ),
-                                          ),
-                                        ),
-                                      // Progress Indicator for Voiceover Generation
-                                      if (_isGenerating[index] ?? false)
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 16.0),
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                              color: colorScheme.primary,
-                                            ),
-                                          ),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: _buildGenerateVoiceoverButton(
+                                              index, colorScheme, textTheme),
                                         ),
                                       // Clear Voiceover Button (Visible if Voiceover is Picked)
                                       if (scene.voiceoverUrl != null &&
                                           scene.voiceoverUrl!.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 16.0),
-                                          child: Center(
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16.0),
                                             child: ElevatedButton.icon(
                                               onPressed: () =>
                                                   _clearVoiceover(index),
@@ -501,6 +501,63 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
         ),
       ),
     );
+  }
+
+// Helper method to show an alert when the text field is empty
+  void _showEmptyTextAlert(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text('Text input field cannot be empty.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Updated _generateVoiceover method to include validation
+  Future<void> _generateVoiceover(int index) async {
+    final text = _textControllers[index].text.trim();
+    if (text.isEmpty) {
+      _showEmptyTextAlert(context);
+      return;
+    }
+
+    setState(() {
+      _isGenerating[index] = true; // Show progress indicator
+    });
+
+    try {
+      final voiceoverFilePath = await _voiceoverService.generateVoiceover(
+          text, widget.scenes[index].sceneNumber, widget.apiService);
+
+      if (voiceoverFilePath != null) {
+        setState(() {
+          widget.scenes[index].voiceoverUrl = voiceoverFilePath;
+          _isGenerating[index] = false; // Hide progress indicator
+        });
+        await _audioPlayers[index].setFilePath(voiceoverFilePath);
+      } else {
+        setState(() {
+          _isGenerating[index] = false; // Hide progress indicator
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to generate voiceover.')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isGenerating[index] = false; // Hide progress indicator
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to generate voiceover: $e')),
+      );
+    }
   }
 
 // Helper method to build the "No Voiceover Selected" placeholder
@@ -636,41 +693,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No file selected or an error occurred.')),
-      );
-    }
-  }
-
-// Generate Voiceover
-  Future<void> _generateVoiceover(int index) async {
-    setState(() {
-      _isGenerating[index] = true; // Show progress indicator
-    });
-
-    try {
-      final prompt = _textControllers[index].text;
-      final voiceoverFilePath = await _voiceoverService.generateVoiceover(
-          prompt, widget.scenes[index].sceneNumber, widget.apiService);
-
-      if (voiceoverFilePath != null) {
-        setState(() {
-          widget.scenes[index].voiceoverUrl = voiceoverFilePath;
-          _isGenerating[index] = false; // Hide progress indicator
-        });
-        await _audioPlayers[index].setFilePath(voiceoverFilePath);
-      } else {
-        setState(() {
-          _isGenerating[index] = false; // Hide progress indicator
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate voiceover.')),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _isGenerating[index] = false; // Hide progress indicator
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate voiceover: $e')),
       );
     }
   }
