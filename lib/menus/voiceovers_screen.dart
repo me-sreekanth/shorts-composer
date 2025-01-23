@@ -65,6 +65,23 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     }
   }
 
+  void _initializePlayers() {
+    for (var i = 0; i < widget.scenes.length; i++) {
+      final player = AudioPlayer();
+      _audioPlayers.add(player);
+      _isPlaying.add(false);
+
+      // Listen to player state changes
+      player.playerStateStream.listen((playerState) {
+        if (mounted) {
+          setState(() {
+            _isPlaying[i] = playerState.playing;
+          });
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -77,12 +94,12 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     super.dispose();
   }
 
-  void _initializePlayers() {
-    for (var i = 0; i < widget.scenes.length; i++) {
-      _audioPlayers.add(AudioPlayer());
-      _isPlaying.add(false);
-    }
-  }
+  // void _initializePlayers() {
+  //   for (var i = 0; i < widget.scenes.length; i++) {
+  //     _audioPlayers.add(AudioPlayer());
+  //     _isPlaying.add(false);
+  //   }
+  // }
 
   void _initializeTextControllers() {
     for (var scene in widget.scenes) {
