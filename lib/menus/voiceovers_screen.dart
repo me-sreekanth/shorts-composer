@@ -94,13 +94,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     super.dispose();
   }
 
-  // void _initializePlayers() {
-  //   for (var i = 0; i < widget.scenes.length; i++) {
-  //     _audioPlayers.add(AudioPlayer());
-  //     _isPlaying.add(false);
-  //   }
-  // }
-
   void _initializeTextControllers() {
     for (var scene in widget.scenes) {
       _textControllers.add(TextEditingController(text: scene.text));
@@ -113,42 +106,6 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
             scene.voiceoverUrl != null && scene.voiceoverUrl!.isNotEmpty)
         .length;
   }
-
-  // Future<void> _generateVoiceover(int index) async {
-  //   setState(() {
-  //     _isLoading[index] = true;
-  //   });
-
-  //   try {
-  //     final scene = widget.scenes[index];
-  //     final voiceoverFilePath = await _voiceoverService.generateVoiceover(
-  //         scene.text, scene.sceneNumber, widget.apiService);
-  //     if (voiceoverFilePath != null) {
-  //       widget.onVoiceoverSelected(index, voiceoverFilePath, isLocal: true);
-  //       await _audioPlayers[index].setFilePath(voiceoverFilePath);
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Failed to generate voiceover.')),
-  //       );
-  //     }
-  //   } finally {
-  //     setState(() {
-  //       _isLoading[index] = false;
-  //     });
-  //   }
-  // }
-
-  // Future<void> _pickVoiceover(int index) async {
-  //   String? filePath = await _voiceoverService.pickVoiceover();
-  //   if (filePath != null) {
-  //     widget.onVoiceoverSelected(index, filePath, isLocal: true);
-  //     await _audioPlayers[index].setFilePath(filePath);
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('No file selected or an error occurred.')),
-  //     );
-  //   }
-  // }
 
   void _deleteScene(int index) {
     setState(() {
@@ -210,317 +167,424 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     final int totalScenes = widget.scenes.length;
     final int scenesWithVoiceovers = _countScenesWithVoiceovers();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Voiceovers for scenes ($scenesWithVoiceovers/$totalScenes)',
-          style: textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onPrimary,
+    return GestureDetector(
+      onTap: () {
+        // Unfocus the text field when tapping outside
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Voiceovers for scenes ($scenesWithVoiceovers/$totalScenes)',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onPrimary,
+            ),
           ),
+          backgroundColor: colorScheme.primary,
+          elevation: 4,
+          centerTitle: true,
         ),
-        backgroundColor: colorScheme.primary,
-        elevation: 4,
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (widget.scenes.isEmpty) ...[
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.mic_off,
-                          size: 80,
-                          color: colorScheme.onSurface.withOpacity(0.5)),
-                      const SizedBox(height: 20),
-                      Text('No Voiceovers Available',
-                          style: textTheme.headlineSmall?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.7))),
-                      const SizedBox(height: 10),
-                      Text('Add scenes to start creating voiceovers.',
-                          style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.5))),
-                    ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              if (widget.scenes.isEmpty) ...[
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.mic_off,
+                            size: 80,
+                            color: colorScheme.onSurface.withOpacity(0.5)),
+                        const SizedBox(height: 20),
+                        Text('No Voiceovers Available',
+                            style: textTheme.headlineSmall?.copyWith(
+                                color: colorScheme.onSurface.withOpacity(0.7))),
+                        const SizedBox(height: 10),
+                        Text('Add scenes to start creating voiceovers.',
+                            style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurface.withOpacity(0.5))),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ] else ...[
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: widget.scenes.length,
-                  itemBuilder: (context, index) {
-                    final scene = widget.scenes[index];
-                    final player = _audioPlayers[index];
+              ] else ...[
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: widget.scenes.length,
+                    onPageChanged: (index) async {
+                      // Pause the currently playing voiceover when the card is changed
+                      for (var player in _audioPlayers) {
+                        if (player.playing) {
+                          await player.pause();
+                        }
+                      }
+                      setState(() {
+                        _isPlaying.fillRange(0, _isPlaying.length, false);
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final scene = widget.scenes[index];
+                      final player = _audioPlayers[index];
 
-                    return AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Transform.scale(
-                        key: ValueKey(scene.sceneNumber),
-                        scale: (1 - (_currentPage - index).abs() * 0.15)
-                            .clamp(0.85, 1.0),
-                        child: Card(
-                          elevation: 6,
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Scene Number and Delete Button Row
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Scene ${scene.sceneNumber}',
-                                      style: textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
+                      return AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Transform.scale(
+                          key: ValueKey(scene.sceneNumber),
+                          scale: (1 - (_currentPage - index).abs() * 0.15)
+                              .clamp(0.85, 1.0),
+                          child: Card(
+                            elevation: 6,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: IntrinsicHeight(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Scene Number and Delete Button Row
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Scene ${scene.sceneNumber}',
+                                          style: textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () => _deleteScene(index),
+                                          icon: Icon(Icons.delete,
+                                              color: colorScheme.error),
+                                          tooltip: 'Delete Scene',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Scene Image (Fixed Height of 150)
+                                  Container(
+                                    height: 150,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(16),
+                                        topRight: Radius.circular(16),
+                                      ),
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.black.withOpacity(0.6),
+                                          Colors.black.withOpacity(0.4),
+                                        ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
                                       ),
                                     ),
-                                    IconButton(
-                                      onPressed: () => _deleteScene(index),
-                                      icon: Icon(Icons.delete,
-                                          color: colorScheme.error),
-                                      tooltip: 'Delete Scene',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Scene Image (Larger Size)
-                              Container(
-                                height: 250, // Increased height for the image
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(16)),
-                                  image: scene.imageUrl != null &&
-                                          scene.imageUrl!.isNotEmpty
-                                      ? DecorationImage(
-                                          image:
-                                              FileImage(File(scene.imageUrl!)),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : const DecorationImage(
-                                          image: AssetImage(
-                                              'assets/dummy_image.png'), // Add a dummy image asset
-                                          fit: BoxFit.cover,
-                                        ),
-                                ),
-                                child: Stack(
-                                  children: [
-                                    // Semi-Transparent Overlay
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.4),
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                                top: Radius.circular(16)),
-                                      ),
-                                    ),
-                                    // Pick Voiceover Button (Inside Image Area)
-                                    if ((scene.voiceoverUrl == null ||
-                                            scene.voiceoverUrl!.isEmpty) &&
-                                        _isTranscribing[index] != true &&
-                                        _isGenerating[index] != true)
-                                      Positioned(
-                                        bottom: 16,
-                                        left: 16,
-                                        right: 16,
-                                        child: Center(
-                                          child: _buildPickVoiceoverButton(
-                                              index, colorScheme, textTheme),
-                                        ),
-                                      ),
-                                    // No Voiceover Selected Content or Audio Player
-                                    if (_isTranscribing[index] != true &&
-                                        _isGenerating[index] != true)
-                                      Center(
-                                        child: scene.voiceoverUrl != null &&
-                                                scene.voiceoverUrl!.isNotEmpty
-                                            ? _buildAudioPlayerControls(
-                                                player, index)
-                                            : _buildNoVoiceoverPlaceholder(
-                                                colorScheme),
-                                      ),
-                                    // Loader for Transcription or Generation
-                                    if (_isTranscribing[index] == true ||
-                                        _isGenerating[index] == true)
-                                      Center(
-                                        child: CircularProgressIndicator(
-                                          color: colorScheme.primary,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              // Content Below the Image
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // OR Label
-                                      if (scene.voiceoverUrl == null ||
-                                          scene.voiceoverUrl!.isEmpty)
-                                        Center(
-                                          child: Text(
-                                            'OR',
-                                            style:
-                                                textTheme.bodyLarge?.copyWith(
-                                              color: colorScheme.onSurface
-                                                  .withOpacity(0.7),
+                                    child: Stack(
+                                      children: [
+                                        // Scene Image (if available)
+                                        if (scene.imageUrl != null &&
+                                            scene.imageUrl!.isNotEmpty)
+                                          ClipRRect(
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                              topLeft: Radius.circular(16),
+                                              topRight: Radius.circular(16),
+                                            ),
+                                            child: Image.file(
+                                              File(scene.imageUrl!),
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                          ),
+                                        // Black Gradient Overlay
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                              topLeft: Radius.circular(16),
+                                              topRight: Radius.circular(16),
+                                            ),
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.black.withOpacity(0.6),
+                                                Colors.black.withOpacity(0.4),
+                                              ],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
                                             ),
                                           ),
                                         ),
-                                      const SizedBox(height: 8),
-                                      // Voiceover Text Field (Always Visible)
-                                      TextField(
-                                        controller: _textControllers[index],
-                                        onChanged: (value) {
-                                          widget.onSceneTextUpdated(
-                                              index, value);
-                                        },
-                                        maxLines:
-                                            10, // Increased maxLines to fill space
-                                        minLines:
-                                            5, // Increased minLines to fill space
-                                        decoration: InputDecoration(
-                                          labelText: scene.voiceoverUrl !=
-                                                      null &&
-                                                  scene.voiceoverUrl!.isNotEmpty
-                                              ? 'Transcript'
-                                              : 'Generate voiceover from text',
-                                          labelStyle:
-                                              textTheme.titleMedium?.copyWith(
-                                            fontSize: 18, // Increased font size
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.7),
+                                        // No Voiceover Selected Content or Audio Player
+                                        if (_isTranscribing[index] != true &&
+                                            _isGenerating[index] != true)
+                                          Center(
+                                            child: scene.voiceoverUrl != null &&
+                                                    scene.voiceoverUrl!
+                                                        .isNotEmpty
+                                                ? _buildAudioPlayerControls(
+                                                    player, index)
+                                                : _buildNoVoiceoverPlaceholder(),
                                           ),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
-                                                color: colorScheme.outline),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
-                                                color: colorScheme.primary,
-                                                width: 2),
-                                          ),
-                                          filled: true,
-                                          fillColor: colorScheme.surfaceVariant,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 12,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      // Generate Voiceover Button (Hidden if Voiceover is Picked)
-                                      if (scene.voiceoverUrl == null ||
-                                          scene.voiceoverUrl!.isEmpty)
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: _buildGenerateVoiceoverButton(
-                                              index, colorScheme, textTheme),
-                                        ),
-                                      // Clear Voiceover Button (Visible if Voiceover is Picked)
-                                      if (scene.voiceoverUrl != null &&
-                                          scene.voiceoverUrl!.isNotEmpty)
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 16.0),
-                                            child: ElevatedButton.icon(
-                                              onPressed: () =>
-                                                  _clearVoiceover(index),
-                                              icon: Icon(Icons.clear,
-                                                  color: colorScheme.onPrimary),
-                                              label: Text('Clear Voiceover',
-                                                  style: textTheme.labelLarge
+                                        // Loader for Transcription or Generation
+                                        if (_isTranscribing[index] == true ||
+                                            _isGenerating[index] == true)
+                                          Center(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                CircularProgressIndicator(
+                                                  color: colorScheme.primary,
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  _isTranscribing[index] == true
+                                                      ? 'Transcribing audio...'
+                                                      : 'Generating voiceover...',
+                                                  style: textTheme.bodyMedium
                                                       ?.copyWith(
-                                                          color: colorScheme
-                                                              .onPrimary)),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    colorScheme.primary,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 12,
-                                                        horizontal: 16),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Content Below the Image
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surfaceVariant,
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(16),
+                                        bottomRight: Radius.circular(16),
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Pick Voiceover Button (Above OR Label)
+                                        if (scene.voiceoverUrl == null ||
+                                            scene.voiceoverUrl!.isEmpty)
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 16.0),
+                                              child: _buildPickVoiceoverButton(
+                                                  index,
+                                                  colorScheme,
+                                                  textTheme),
+                                            ),
+                                          ),
+                                        // OR Label
+                                        if (scene.voiceoverUrl == null ||
+                                            scene.voiceoverUrl!.isEmpty)
+                                          Center(
+                                            child: Text(
+                                              'OR',
+                                              style:
+                                                  textTheme.bodyLarge?.copyWith(
+                                                color: colorScheme.onSurface
+                                                    .withOpacity(0.7),
+                                              ),
+                                            ),
+                                          ),
+                                        const SizedBox(height: 8),
+                                        // Voiceover Text Field
+                                        TextField(
+                                          controller: _textControllers[index],
+                                          onChanged: (value) {
+                                            widget.onSceneTextUpdated(
+                                                index, value);
+                                          },
+                                          maxLines: 5,
+                                          minLines: 3,
+                                          decoration: InputDecoration(
+                                            labelText: scene.voiceoverUrl !=
+                                                        null &&
+                                                    scene.voiceoverUrl!
+                                                        .isNotEmpty
+                                                ? 'Transcript'
+                                                : 'Generate voiceover from text',
+                                            labelStyle:
+                                                textTheme.titleMedium?.copyWith(
+                                              fontSize: 18,
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.7),
+                                            ),
+                                            alignLabelWithHint: true,
+                                            floatingLabelAlignment:
+                                                FloatingLabelAlignment.start,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                  color: colorScheme.outline),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                  color: colorScheme.primary,
+                                                  width: 2),
+                                            ),
+                                            filled: true,
+                                            fillColor:
+                                                colorScheme.surfaceVariant,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Generate Voiceover Button
+                                        if (scene.voiceoverUrl == null ||
+                                            scene.voiceoverUrl!.isEmpty)
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child:
+                                                _buildGenerateVoiceoverButton(
+                                                    index,
+                                                    colorScheme,
+                                                    textTheme),
+                                          ),
+                                        // Clear Voiceover Button
+                                        if (scene.voiceoverUrl != null &&
+                                            scene.voiceoverUrl!.isNotEmpty)
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 16.0),
+                                              child: ElevatedButton.icon(
+                                                onPressed: () =>
+                                                    _clearVoiceover(index),
+                                                icon: Icon(Icons.clear,
+                                                    color: Colors.white),
+                                                label: Text('Clear Voiceover',
+                                                    style: textTheme.labelLarge
+                                                        ?.copyWith(
+                                                            color:
+                                                                Colors.white)),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.red,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      vertical: 12,
+                                                      horizontal: 16),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: SmoothPageIndicator(
+                    controller: _pageController,
+                    count: widget.scenes.length,
+                    effect: WormEffect(
+                        dotHeight: 8,
+                        dotWidth: 8,
+                        activeDotColor: colorScheme.primary,
+                        dotColor: colorScheme.surfaceVariant),
+                  ),
+                ),
+              ],
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: SmoothPageIndicator(
-                  controller: _pageController,
-                  count: widget.scenes.length,
-                  effect: WormEffect(
-                      dotHeight: 8,
-                      dotWidth: 8,
-                      activeDotColor: colorScheme.primary,
-                      dotColor: colorScheme.surfaceVariant),
-                ),
-              ),
-            ],
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton.icon(
-                onPressed: _addNewScene,
-                icon: Icon(Icons.add, color: colorScheme.onPrimary),
-                label: Text('Add New Scene',
-                    style: textTheme.labelLarge
-                        ?.copyWith(color: colorScheme.onPrimary)),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  backgroundColor: colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton.icon(
+                  onPressed: _addNewScene,
+                  icon: Icon(Icons.add, color: colorScheme.onPrimary),
+                  label: Text('Add New Scene',
+                      style: textTheme.labelLarge
+                          ?.copyWith(color: colorScheme.onPrimary)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 24),
+                    backgroundColor: colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-// Helper method to show an alert when the text field is empty
+  // Helper method to build the "Pick Voiceover" button
+  Widget _buildPickVoiceoverButton(
+      int index, ColorScheme colorScheme, TextTheme textTheme) {
+    return ElevatedButton.icon(
+      onPressed: () => _pickVoiceover(index),
+      icon: Icon(Icons.upload_file, color: colorScheme.onSecondary),
+      label: Text('Pick Voiceover',
+          style:
+              textTheme.labelLarge?.copyWith(color: colorScheme.onSecondary)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.secondary, // Use secondary color
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build the "No Voiceover Selected" placeholder
+  Widget _buildNoVoiceoverPlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.mic_off, size: 40, color: Colors.white),
+        const SizedBox(height: 8),
+        Text(
+          'No Voiceover Selected',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper method to show an alert when the text field is empty
   void _showEmptyTextAlert(BuildContext context) {
     showDialog(
       context: context,
@@ -537,7 +601,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
-// Updated _generateVoiceover method to include validation
+  // Updated _generateVoiceover method to include validation
   Future<void> _generateVoiceover(int index) async {
     final text = _textControllers[index].text.trim();
     if (text.isEmpty) {
@@ -577,43 +641,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     }
   }
 
-// Helper method to build the "No Voiceover Selected" placeholder
-  Widget _buildNoVoiceoverPlaceholder(ColorScheme colorScheme) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.mic_off, size: 40, color: Colors.white.withOpacity(0.7)),
-        const SizedBox(height: 8),
-        Text(
-          'No Voiceover Selected',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.white.withOpacity(0.7),
-          ),
-        ),
-      ],
-    );
-  }
-
-// Helper method to build the "Pick Voiceover" button
-  Widget _buildPickVoiceoverButton(
-      int index, ColorScheme colorScheme, TextTheme textTheme) {
-    return OutlinedButton.icon(
-      onPressed: () => _pickVoiceover(index),
-      icon: Icon(Icons.upload_file, color: Colors.white),
-      label: Text('Pick Voiceover',
-          style: textTheme.labelLarge?.copyWith(color: Colors.white)),
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: Colors.white),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
-
-// Helper method to build the "Generate Voiceover" button
+  // Helper method to build the "Generate Voiceover" button
   Widget _buildGenerateVoiceoverButton(
       int index, ColorScheme colorScheme, TextTheme textTheme) {
     return ElevatedButton.icon(
@@ -622,7 +650,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
       label: Text('Generate Voiceover',
           style: textTheme.labelLarge?.copyWith(color: colorScheme.onPrimary)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.primary,
+        backgroundColor: colorScheme.primary, // Use primary color
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -631,7 +659,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
-// Audio player controls
+  // Audio player controls
   Widget _buildAudioPlayerControls(AudioPlayer player, int index) {
     return Container(
       width: double.infinity,
@@ -671,7 +699,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     );
   }
 
-// Clear Voiceover
+  // Clear Voiceover
   void _clearVoiceover(int index) {
     setState(() {
       widget.scenes[index].voiceoverUrl = null;
@@ -682,7 +710,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     widget.onVoiceoverSelected(index, '', isLocal: false);
   }
 
-// Pick Voiceover
+  // Pick Voiceover
   Future<void> _pickVoiceover(int index) async {
     String? filePath = await _voiceoverService.pickVoiceover();
     if (filePath != null) {
@@ -714,7 +742,7 @@ class _VoiceoversScreenState extends State<VoiceoversScreen> {
     }
   }
 
-// Transcribe and Generate ASS File
+  // Transcribe and Generate ASS File
   Future<String> transcribeAndGenerateAss(String audioFilePath) async {
     String contentType =
         audioFilePath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
